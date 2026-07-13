@@ -66,13 +66,13 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_gravity="center"
-                        android:background="#64000000"
+                        android:background="@color/thumbnail_hold_overlay_background_color"
                         android:paddingLeft="30dp"
                         android:paddingTop="10dp"
                         android:paddingRight="30dp"
                         android:paddingBottom="10dp"
                         android:text="@string/hold_to_append"
-                        android:textColor="@android:color/white"
+                        android:textColor="@color/white"
                         android:textSize="20sp"
                         android:textStyle="bold"
                         android:visibility="gone"
@@ -89,14 +89,14 @@
                         android:layout_marginRight="12dp"
                         android:layout_marginBottom="8dp"
                         android:alpha=".6"
-                        android:background="#23000000"
+                        android:background="@color/thumbnail_duration_badge_background_color"
                         android:gravity="center"
                         android:paddingLeft="6dp"
                         android:paddingTop="2dp"
                         android:paddingRight="6dp"
                         android:paddingBottom="2dp"
                         android:textAllCaps="true"
-                        android:textColor="@android:color/white"
+                        android:textColor="@color/white"
                         android:textSize="12sp"
                         android:textStyle="bold"
                         android:visibility="gone"
@@ -121,7 +121,7 @@
                         android:paddingRight="6dp"
                         android:paddingBottom="2dp"
                         android:textAllCaps="true"
-                        android:textColor="@android:color/white"
+                        android:textColor="@color/white"
                         android:textSize="12sp"
                         android:textStyle="bold"
                         android:visibility="gone"
@@ -177,6 +177,7 @@
                         android:maxLines="1"
                         android:paddingTop="12dp"
                         android:paddingBottom="8dp"
+                        android:textColor="?attr/colorOnSurface"
                         android:textAppearance="?android:attr/textAppearanceLarge"
                         android:textSize="@dimen/video_item_detail_title_text_size"
                         tools:text="Lorem ipsum dolor sit amet, consectetur adipiscing elit sed a ultricies ex. Integer sit amet sodales risus. Duis non mi et urna pretium bibendum. Nunc eleifend est quis ipsum porttitor egestas. Sed facilisis, nisl quis eleifend pellentesque, orci metus egestas dolor, at accumsan eros metus quis libero." />
@@ -189,6 +190,7 @@
                         android:layout_marginTop="11dp"
                         android:layout_marginEnd="10dp"
                         android:src="@drawable/ic_expand_more"
+                        app:tint="?attr/colorOnSurfaceVariant"
                         tools:ignore="ContentDescription" />
 
                 </FrameLayout>
@@ -290,6 +292,7 @@
                                     android:marqueeRepeatLimit="marquee_forever"
                                     android:scrollHorizontally="true"
                                     android:singleLine="true"
+                                    android:textColor="?attr/colorOnSurface"
                                     android:textAppearance="?android:attr/textAppearanceLarge"
                                     android:textSize="@dimen/video_item_detail_sub_channel_text_size"
                                     android:textStyle="normal|bold"
@@ -305,6 +308,7 @@
                                     android:marqueeRepeatLimit="marquee_forever"
                                     android:scrollHorizontally="true"
                                     android:singleLine="true"
+                                    android:textColor="?attr/colorOnSurfaceVariant"
                                     android:textSize="@dimen/video_item_detail_uploader_text_size"
                                     tools:ignore="RtlHardcoded"
                                     tools:text="Uploader" />
@@ -330,6 +334,7 @@
                                 android:layout_marginTop="6dp"
                                 android:layout_marginBottom="6dp"
                                 android:lines="1"
+                                android:textColor="?attr/colorOnSurface"
                                 android:textAppearance="?android:attr/textAppearanceLarge"
                                 android:textSize="@dimen/video_item_detail_views_text_size"
                                 tools:ignore="RtlHardcoded"
@@ -341,7 +346,8 @@
                                 android:layout_height="@dimen/video_item_detail_like_image_height"
                                 android:layout_below="@id/detail_view_count_view"
                                 android:contentDescription="@string/detail_likes_img_view_description"
-                                android:src="@drawable/ic_thumb_up" />
+                                android:src="@drawable/ic_thumb_up"
+                                app:tint="?attr/colorOnSurfaceVariant" />
 
                             <org.schabi.newpipe.views.NewPipeTextView
                                 android:id="@+id/detail_thumbs_up_count_view"
@@ -352,6 +358,7 @@
                                 android:layout_toRightOf="@id/detail_thumbs_up_img_view"
                                 android:gravity="center_vertical"
                                 android:lines="1"
+                                android:textColor="?attr/colorOnSurfaceVariant"
                                 android:textAppearance="?android:attr/textAppearanceMedium"
                                 android:textSize="@dimen/video_item_detail_likes_text_size"
                                 tools:ignore="RtlHardcoded"
@@ -366,6 +373,7 @@
                                 android:layout_toRightOf="@id/detail_thumbs_up_count_view"
                                 android:contentDescription="@string/detail_dislikes_img_view_description"
                                 android:src="@drawable/ic_thumb_down"
+                                app:tint="?attr/colorOnSurfaceVariant"
                                 tools:ignore="RtlHardcoded" />
 
                             <org.schabi.newpipe.views.NewPipeTextView
@@ -377,6 +385,7 @@
                                 android:layout_toRightOf="@id/detail_thumbs_down_img_view"
                                 android:gravity="center_vertical"
                                 android:lines="1"
+                                android:textColor="?attr/colorOnSurfaceVariant"
                                 android:textAppearance="?android:attr/textAppearanceMedium"
                                 android:textSize="@dimen/video_item_detail_likes_text_size"
                                 tools:ignore="RtlHardcoded"
@@ -391,6 +400,7 @@
                                 android:layout_toRightOf="@id/detail_thumbs_down_img_view"
                                 android:gravity="center_vertical"
                                 android:text="@string/disabled"
+                                android:textColor="?attr/colorOnSurfaceVariant"
                                 android:textAppearance="?android:attr/textAppearanceLarge"
                                 android:textSize="@dimen/video_item_detail_likes_text_size"
                                 android:textStyle="bold"
@@ -410,6 +420,7 @@
 
                         <org.schabi.newpipe.views.NewPipeTextView
                             android:id="@+id/detail_controls_playlist_append"
+                            style="@style/VideoDetailActionText"
                             android:layout_width="@dimen/detail_control_width"
                             android:layout_height="@dimen/detail_control_height"
                             android:layout_gravity="center_vertical"
@@ -426,6 +437,7 @@
 
                         <org.schabi.newpipe.views.NewPipeTextView
                             android:id="@+id/detail_controls_background"
+                            style="@style/VideoDetailActionText"
                             android:layout_width="@dimen/detail_control_width"
                             android:layout_height="@dimen/detail_control_height"
                             android:layout_gravity="center_vertical"
@@ -442,6 +454,7 @@
 
                         <org.schabi.newpipe.views.NewPipeTextView
                             android:id="@+id/detail_controls_popup"
+                            style="@style/VideoDetailActionText"
                             android:layout_width="@dimen/detail_control_width"
                             android:layout_height="@dimen/detail_control_height"
                             android:layout_gravity="center_vertical"
@@ -458,6 +471,7 @@
 
                         <org.schabi.newpipe.views.NewPipeTextView
                             android:id="@+id/detail_controls_download"
+                            style="@style/VideoDetailActionText"
                             android:layout_width="@dimen/detail_control_width"
                             android:layout_height="@dimen/detail_control_height"
                             android:layout_gravity="center_vertical"
@@ -487,6 +501,7 @@
 
                         <org.schabi.newpipe.views.NewPipeTextView
                             android:id="@+id/detail_controls_share"
+                            style="@style/VideoDetailActionText"
                             android:layout_width="@dimen/detail_control_width"
                             android:layout_height="@dimen/detail_control_height"
                             android:layout_gravity="center_vertical"
@@ -503,6 +518,7 @@
 
                         <org.schabi.newpipe.views.NewPipeTextView
                             android:id="@+id/detail_controls_open_in_browser"
+                            style="@style/VideoDetailActionText"
                             android:layout_width="@dimen/detail_control_width"
                             android:layout_height="@dimen/detail_control_height"
                             android:layout_gravity="center_vertical"
@@ -519,6 +535,7 @@
 
                         <org.schabi.newpipe.views.NewPipeTextView
                             android:id="@+id/detail_controls_play_with_kodi"
+                            style="@style/VideoDetailActionText"
                             android:layout_width="@dimen/detail_control_width"
                             android:layout_height="@dimen/detail_control_height"
                             android:layout_gravity="center_vertical"
@@ -535,6 +552,7 @@
 
                         <org.schabi.newpipe.views.NewPipeTextView
                             android:id="@+id/detail_controls_crash_the_player"
+                            style="@style/VideoDetailActionText"
                             android:layout_width="@dimen/detail_control_width"
                             android:layout_height="@dimen/detail_control_height"
                             android:layout_gravity="center_vertical"
@@ -557,7 +575,7 @@
                         android:layout_height="1px"
                         android:layout_marginLeft="8dp"
                         android:layout_marginRight="8dp"
-                        android:background="?attr/separator_color" />
+                        android:background="?attr/colorSurfaceVariant" />
 
                     <org.schabi.newpipe.views.NewPipeTextView
                         android:id="@+id/detail_meta_info_text_view"
@@ -565,6 +583,7 @@
                         android:layout_height="wrap_content"
                         android:gravity="center"
                         android:padding="12dp"
+                        android:textColor="?attr/colorOnSurfaceVariant"
                         android:textSize="@dimen/video_item_detail_description_text_size"
                         tools:text="Stream meta info with link" />
 
@@ -573,7 +592,7 @@
                         android:layout_height="1px"
                         android:layout_marginLeft="8dp"
                         android:layout_marginRight="8dp"
-                        android:background="?attr/separator_color" />
+                        android:background="?attr/colorSurfaceVariant" />
 
                 </LinearLayout>
             </RelativeLayout>
@@ -592,10 +611,13 @@
             android:layout_height="wrap_content"
             android:layout_gravity="bottom|center"
             app:elevation="16dp"
-            app:tabBackground="?attr/windowBackground"
+            app:tabBackground="?attr/colorSurface"
             app:tabGravity="fill"
-            app:tabIconTint="?attr/colorAccent"
-            app:tabIndicatorGravity="top" />
+            app:tabIconTint="@color/tab_layout_material_item_color"
+            app:tabIndicatorColor="?attr/colorPrimary"
+            app:tabIndicatorGravity="top"
+            app:tabRippleColor="?attr/colorControlHighlight"
+            app:tabTextColor="@color/tab_layout_material_item_color" />
 
     </androidx.coordinatorlayout.widget.CoordinatorLayout>
 

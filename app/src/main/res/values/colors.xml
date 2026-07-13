@@ -21,6 +21,9 @@
     <color name="light_m3_on_secondary_container_color">#10200F</color>
     <color name="light_m3_surface_variant_color">#DFE5DA</color>
     <color name="light_m3_on_surface_variant_color">#41493F</color>
+    <color name="light_m3_inverse_surface_color">#30332F</color>
+    <color name="light_m3_inverse_on_surface_color">#F0F1EC</color>
+    <color name="light_m3_inverse_primary_color">#AED4AF</color>
 
     <color name="dark_m3_primary_color">#AED4AF</color>
     <color name="dark_m3_on_primary_color">#19361E</color>
@@ -32,6 +35,9 @@
     <color name="dark_m3_on_secondary_container_color">#D5E8CF</color>
     <color name="dark_m3_surface_variant_color">#41493F</color>
     <color name="dark_m3_on_surface_variant_color">#C1C8BC</color>
+    <color name="dark_m3_inverse_surface_color">#E2E3DD</color>
+    <color name="dark_m3_inverse_on_surface_color">#2F312D</color>
+    <color name="dark_m3_inverse_primary_color">#46674F</color>
 
     <!-- Light Theme -->
     <color name="light_background_color">#EEEEEE</color>
@@ -76,11 +82,20 @@
     <!-- Miscellaneous -->
     <color name="queue_background_color">@color/dark_queue_background_color</color>
     <color name="drawer_header_font_color">#F2FFFFFF</color>
+    <!-- High-contrast thumbnail badges used by info-list stream/playlist rows.
+         These intentionally stay static over arbitrary thumbnail artwork. -->
+    <color name="info_list_duration_badge_background_color">#aa000000</color>
+    <color name="info_list_playlist_stream_count_badge_background_color">#e6000000</color>
+    <color name="info_list_thumbnail_badge_text_color">#EEFFFFFF</color>
+
     <color name="duration_background_color">#aa000000</color>
     <color name="live_duration_background_color">#c8E53935</color>
     <color name="playlist_stream_count_background_color">#e6000000</color>
     <color name="duration_text_color">#EEFFFFFF</color>
     <color name="video_overlay_color">#64000000</color>
+    <color name="thumbnail_avatar_stroke_color">#FFFFFFFF</color>
+    <color name="thumbnail_hold_overlay_background_color">#64000000</color>
+    <color name="thumbnail_duration_badge_background_color">#23000000</color>
 
     <color name="subscribe_text_color">#fff</color>
     <color name="subscribed_background_color">#d6d6d6</color>

@@ -17,6 +17,9 @@
     <style name="Base.V21" parent="Theme.Material3.DayNight.NoActionBar">
         <item name="actionColor">?attr/colorOnSurface</item>
         <item name="floatingActionButtonStyle">@style/FloatingActionButtonTheme</item>
+        <item name="snackbarStyle">@style/Widget.NewPipeMaterial.Snackbar</item>
+        <item name="snackbarButtonStyle">@style/Widget.NewPipeMaterial.Button.TextButton.Snackbar</item>
+        <item name="snackbarTextViewStyle">@style/Widget.NewPipeMaterial.Snackbar.TextView</item>
         <item name="toolbarSearchColor">?attr/colorOnSurface</item>
         <item name="colorControlActivated">?attr/colorSecondary</item>
     </style>
@@ -36,8 +39,11 @@
         <item name="colorOnSecondaryContainer">@color/light_m3_on_secondary_container_color</item>
         <item name="colorSurfaceVariant">@color/light_m3_surface_variant_color</item>
         <item name="colorOnSurfaceVariant">@color/light_m3_on_surface_variant_color</item>
-        <item name="actionColor">@color/black</item>
-        <item name="toolbarSearchColor">@color/black</item>
+        <item name="colorSurfaceInverse">@color/light_m3_inverse_surface_color</item>
+        <item name="colorOnSurfaceInverse">@color/light_m3_inverse_on_surface_color</item>
+        <item name="colorPrimaryInverse">@color/light_m3_inverse_primary_color</item>
+        <item name="actionColor">?attr/colorOnSurface</item>
+        <item name="toolbarSearchColor">?attr/colorOnSurface</item>
         <item name="colorPrimaryContainer">@color/light_m3_primary_container_color</item>
         <item name="colorOnPrimaryContainer">@color/light_m3_on_primary_container_color</item>
         <item name="colorOutline">@color/light_border_color</item>
@@ -76,8 +82,11 @@
         <item name="colorOnSecondaryContainer">@color/dark_m3_on_secondary_container_color</item>
         <item name="colorSurfaceVariant">@color/dark_m3_surface_variant_color</item>
         <item name="colorOnSurfaceVariant">@color/dark_m3_on_surface_variant_color</item>
-        <item name="actionColor">@color/white</item>
-        <item name="toolbarSearchColor">@color/white</item>
+        <item name="colorSurfaceInverse">@color/dark_m3_inverse_surface_color</item>
+        <item name="colorOnSurfaceInverse">@color/dark_m3_inverse_on_surface_color</item>
+        <item name="colorPrimaryInverse">@color/dark_m3_inverse_primary_color</item>
+        <item name="actionColor">?attr/colorOnSurface</item>
+        <item name="toolbarSearchColor">?attr/colorOnSurface</item>
         <item name="colorPrimaryContainer">@color/dark_m3_primary_container_color</item>
         <item name="colorOnPrimaryContainer">@color/dark_m3_on_primary_container_color</item>
         <item name="colorOutline">@color/dark_border_color</item>
@@ -110,12 +119,15 @@
         <item name="android:navigationBarColor">?attr/colorSurface</item>
         <item name="colorSurface">@color/black_background_color</item>
         <item name="colorOnSurface">@color/white</item>
-        <item name="actionColor">@color/white</item>
-        <item name="toolbarSearchColor">@color/white</item>
+        <item name="actionColor">?attr/colorOnSurface</item>
+        <item name="toolbarSearchColor">?attr/colorOnSurface</item>
         <item name="colorPrimaryContainer">@color/dark_m3_primary_container_color</item>
         <item name="colorOnPrimaryContainer">@color/dark_m3_on_primary_container_color</item>
         <item name="colorSecondary">@color/dark_m3_secondary_color</item>
         <item name="colorOnSecondary">@color/dark_m3_on_secondary_color</item>
+        <item name="colorSurfaceInverse">@color/dark_m3_inverse_surface_color</item>
+        <item name="colorOnSurfaceInverse">@color/dark_m3_inverse_on_surface_color</item>
+        <item name="colorPrimaryInverse">@color/dark_m3_inverse_primary_color</item>
         <item name="colorOutline">@color/black_border_color</item>
 
         <item name="separator_color">@color/black_separator_color</item>
@@ -291,20 +303,29 @@
     </style>
 
     <style name="LightSettingsTheme" parent="LightTheme">
-        <item name="colorAccent">@color/light_settings_accent_color</item>
-        <item name="preferenceCategoryTitleTextColor">?attr/colorOnSurfaceVariant</item>
+        <item name="colorAccent">?attr/colorPrimary</item>
+        <item name="android:textColorPrimary">?attr/colorOnSurface</item>
+        <item name="android:textColorSecondary">?attr/colorOnSurfaceVariant</item>
+        <item name="colorControlNormal">?attr/colorOnSurfaceVariant</item>
+        <item name="preferenceCategoryTitleTextColor">?attr/colorPrimary</item>
         <item name="switchPreferenceCompatStyle">@style/Preference.MaterialSwitchPreferenceCompat</item>
     </style>
 
     <style name="DarkSettingsTheme" parent="DarkTheme">
-        <item name="colorAccent">@color/dark_settings_accent_color</item>
-        <item name="preferenceCategoryTitleTextColor">?attr/colorOnSurfaceVariant</item>
+        <item name="colorAccent">?attr/colorPrimary</item>
+        <item name="android:textColorPrimary">?attr/colorOnSurface</item>
+        <item name="android:textColorSecondary">?attr/colorOnSurfaceVariant</item>
+        <item name="colorControlNormal">?attr/colorOnSurfaceVariant</item>
+        <item name="preferenceCategoryTitleTextColor">?attr/colorPrimary</item>
         <item name="switchPreferenceCompatStyle">@style/Preference.MaterialSwitchPreferenceCompat</item>
     </style>
 
     <style name="BlackSettingsTheme" parent="BlackTheme">
-        <item name="colorAccent">@color/black_settings_accent_color</item>
-        <item name="preferenceCategoryTitleTextColor">?attr/colorOnSurfaceVariant</item>
+        <item name="colorAccent">?attr/colorPrimary</item>
+        <item name="android:textColorPrimary">?attr/colorOnSurface</item>
+        <item name="android:textColorSecondary">?attr/colorOnSurfaceVariant</item>
+        <item name="colorControlNormal">?attr/colorOnSurfaceVariant</item>
+        <item name="preferenceCategoryTitleTextColor">?attr/colorPrimary</item>
         <item name="switchPreferenceCompatStyle">@style/Preference.MaterialSwitchPreferenceCompat</item>
     </style>
 
