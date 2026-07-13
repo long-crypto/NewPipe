@@ -252,7 +252,6 @@ public class MainFragment extends BaseFragment implements TabLayout.OnTabSelecte
             if (tab instanceof Tab.FeedTab || tab instanceof Tab.FeedGroupTab) {
                 binding.pager.setCurrentItem(i, false);
                 updateTitleForTab(i);
-                syncMainTabSelectionState();
                 return true;
             }
         }
