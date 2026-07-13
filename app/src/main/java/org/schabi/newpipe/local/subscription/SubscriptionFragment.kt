@@ -47,6 +47,7 @@ import org.schabi.newpipe.local.subscription.item.FeedImportExportItem
 import org.schabi.newpipe.local.subscription.item.GroupsHeader
 import org.schabi.newpipe.local.subscription.item.Header
 import org.schabi.newpipe.local.subscription.item.ImportSubscriptionsHintPlaceholderItem
+import org.schabi.newpipe.settings.BackupRestoreSettingsFragment
 import org.schabi.newpipe.util.NavigationHelper
 import org.schabi.newpipe.util.OnClickGesture
 import org.schabi.newpipe.util.ServiceHelper
@@ -179,6 +180,18 @@ class SubscriptionFragment : BaseStateFragment<SubscriptionState>() {
     private fun onImportFromServiceSelected(serviceId: Int) {
         val fragmentManager = fm
         NavigationHelper.openSubscriptionsImportFragment(fragmentManager, serviceId)
+    }
+
+    private fun onImportPreviousSelected() {
+        importExportHelper.onImportPreviousSelected()
+    }
+
+    private fun onBackupSelected() {
+        NavigationHelper.openSettings(requireContext(), BackupRestoreSettingsFragment::class.java)
+    }
+
+    private fun onExportSelected() {
+        importExportHelper.onExportSelected()
     }
 
     private fun openReorderDialog() {
