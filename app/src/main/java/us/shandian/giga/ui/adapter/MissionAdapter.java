@@ -33,11 +33,13 @@ import android.os.Message;
 import android.util.Log;
 import android.view.HapticFeedbackConstants;
 import android.view.LayoutInflater;
+import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.webkit.MimeTypeMap;
 import android.widget.ImageView;
+import android.widget.PopupMenu;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -53,7 +55,6 @@ import androidx.recyclerview.widget.RecyclerView;
 import androidx.recyclerview.widget.RecyclerView.Adapter;
 import androidx.recyclerview.widget.RecyclerView.ViewHolder;
 
-import com.google.android.material.bottomsheet.BottomSheetDialog;
 import com.google.android.material.snackbar.Snackbar;
 
 import org.schabi.newpipe.BuildConfig;
@@ -62,7 +63,6 @@ import org.schabi.newpipe.error.ErrorInfo;
 import org.schabi.newpipe.error.ErrorUtil;
 import org.schabi.newpipe.error.UserAction;
 import org.schabi.newpipe.extractor.NewPipe;
-import org.schabi.newpipe.ui.MaterialActionSheetDialog;
 import org.schabi.newpipe.streams.io.StoredFileHelper;
 import org.schabi.newpipe.util.Localization;
 import org.schabi.newpipe.util.NavigationHelper;
@@ -170,10 +170,7 @@ public class MissionAdapter extends Adapter<ViewHolder> implements Handler.Callb
             }
         }
 
-        if (h.actionSheetDialog != null) {
-            h.actionSheetDialog.dismiss();
-            h.actionSheetDialog = null;
-        }
+        h.popupMenu.dismiss();
         h.item = null;
         h.resetSpeedMeasure();
     }
@@ -213,6 +210,7 @@ public class MissionAdapter extends Adapter<ViewHolder> implements Handler.Callb
             if (mission.running && !mission.isPsRunning()) length += " --.- kB/s";
 
             h.size.setText(length);
+            h.pause.setTitle(mission.unknownLength ? R.string.stop : R.string.pause);
             updateProgress(h);
             mPendingDownloadsItems.add(h);
 
@@ -539,7 +537,7 @@ public class MissionAdapter extends Adapter<ViewHolder> implements Handler.Callb
                 break;
         }
 
-        AlertDialog.Builder builder = new com.google.android.material.dialog.MaterialAlertDialogBuilder(mContext);
+        AlertDialog.Builder builder = new AlertDialog.Builder(mContext);
 
         if (msgEx != null)
             builder.setMessage(msgEx);
@@ -630,9 +628,10 @@ public class MissionAdapter extends Adapter<ViewHolder> implements Handler.Callb
         }
     }
 
-    private boolean handlePopupItem(@NonNull final ViewHolderItem h, final int id) {
+    private boolean handlePopupItem(@NonNull ViewHolderItem h, @NonNull MenuItem option) {
         if (h.item == null) return true;
 
+        int id = option.getItemId();
         DownloadMission mission = h.item.mission instanceof DownloadMission ? (DownloadMission) h.item.mission : null;
 
         if (mission != null) {
@@ -647,7 +646,8 @@ public class MissionAdapter extends Adapter<ViewHolder> implements Handler.Callb
                 showError(mission);
                 return true;
             } else if (id == R.id.queue) {
-                boolean flag = !mission.enqueued;
+                boolean flag = !h.queue.isChecked();
+                h.queue.setChecked(flag);
                 mission.setEnqueued(flag);
                 updateProgress(h);
                 return true;
@@ -850,7 +850,17 @@ public class MissionAdapter extends Adapter<ViewHolder> implements Handler.Callb
         TextView date;
         ProgressDrawable progress;
 
-        BottomSheetDialog actionSheetDialog;
+        PopupMenu popupMenu;
+        MenuItem retry;
+        MenuItem cancel;
+        MenuItem start;
+        MenuItem pause;
+        MenuItem open;
+        MenuItem queue;
+        MenuItem showError;
+        MenuItem delete;
+        MenuItem source;
+        MenuItem checksum;
 
         long lastTimestamp = -1;
         double lastDone;
@@ -872,8 +882,21 @@ public class MissionAdapter extends Adapter<ViewHolder> implements Handler.Callb
 
             name.setSelected(true);
 
-            View button = itemView.findViewById(R.id.item_more);
-            button.setOnClickListener(v -> showActionSheet());
+            ImageView button = itemView.findViewById(R.id.item_more);
+            popupMenu = buildPopup(button);
+            button.setOnClickListener(v -> showPopupMenu());
+
+            Menu menu = popupMenu.getMenu();
+            retry = menu.findItem(R.id.retry);
+            cancel = menu.findItem(R.id.cancel);
+            start = menu.findItem(R.id.start);
+            pause = menu.findItem(R.id.pause);
+            open = menu.findItem(R.id.menu_item_share);
+            queue = menu.findItem(R.id.queue);
+            showError = menu.findItem(R.id.error_message_view);
+            delete = menu.findItem(R.id.delete);
+            source = menu.findItem(R.id.source);
+            checksum = menu.findItem(R.id.checksum);
 
             itemView.setHapticFeedbackEnabled(true);
 
@@ -884,105 +907,75 @@ public class MissionAdapter extends Adapter<ViewHolder> implements Handler.Callb
 
             itemView.setOnLongClickListener(v -> {
                 v.performHapticFeedback(HapticFeedbackConstants.LONG_PRESS);
-                showActionSheet();
+                showPopupMenu();
                 return true;
             });
         }
 
-        private void showActionSheet() {
-            if (actionSheetDialog != null) {
-                actionSheetDialog.dismiss();
-            }
-            final ArrayList<MaterialActionSheetDialog.ActionItem> actionItems =
-                    new ArrayList<>();
+        private void showPopupMenu() {
+            retry.setVisible(false);
+            cancel.setVisible(false);
+            start.setVisible(false);
+            pause.setVisible(false);
+            open.setVisible(false);
+            queue.setVisible(false);
+            showError.setVisible(false);
+            delete.setVisible(false);
+            source.setVisible(false);
+            checksum.setVisible(false);
 
             DownloadMission mission = item.mission instanceof DownloadMission ? (DownloadMission) item.mission : null;
 
             if (mission != null) {
                 if (mission.hasInvalidStorage()) {
-                    actionItems.add(createAction(R.id.retry, R.string.retry, R.drawable.ic_refresh));
-                    actionItems.add(createAction(
-                            R.id.delete, R.string.delete_file, R.drawable.ic_delete));
-                    actionItems.add(createAction(
-                            R.id.error_message_view, R.string.show_error, R.drawable.ic_bug_report));
+                    retry.setVisible(true);
+                    delete.setVisible(true);
+                    showError.setVisible(true);
                 } else if (mission.isPsRunning()) {
                     switch (mission.errCode) {
                         case ERROR_INSUFFICIENT_STORAGE:
                         case ERROR_POSTPROCESSING_HOLD:
-                            actionItems.add(createAction(
-                                    R.id.retry, R.string.retry, R.drawable.ic_refresh));
-                            actionItems.add(createAction(
-                                    R.id.cancel, R.string.cancel, R.drawable.ic_close));
-                            actionItems.add(createAction(
-                                    R.id.error_message_view,
-                                    R.string.show_error,
-                                    R.drawable.ic_bug_report));
+                            retry.setVisible(true);
+                            cancel.setVisible(true);
+                            showError.setVisible(true);
                             break;
                     }
                 } else {
                     if (mission.running) {
-                        actionItems.add(createAction(
-                                R.id.pause,
-                                mission.unknownLength ? R.string.stop : R.string.pause,
-                                R.drawable.ic_pause));
+                        pause.setVisible(true);
                     } else {
                         if (mission.errCode != ERROR_NOTHING) {
-                            actionItems.add(createAction(
-                                    R.id.error_message_view,
-                                    R.string.show_error,
-                                    R.drawable.ic_bug_report));
+                            showError.setVisible(true);
                         }
-                        actionItems.add(MaterialActionSheetDialog.ActionItem.checked(
-                                R.id.queue,
-                                mContext.getString(R.string.enqueue),
-                                R.drawable.ic_playlist_play,
-                                mission.enqueued,
-                                () -> handlePopupItem(this, R.id.queue)));
-                        actionItems.add(createAction(
-                                R.id.delete, R.string.delete_file, R.drawable.ic_delete));
+
+                        queue.setChecked(mission.enqueued);
+
+                        delete.setVisible(true);
 
                         boolean flag = !mission.isPsFailed() && mission.urls.length > 0;
-                        if (flag) {
-                            actionItems.add(0, createAction(
-                                    R.id.start, R.string.start, R.drawable.ic_play_arrow));
-                        }
+                        start.setVisible(flag);
+                        queue.setVisible(flag);
                     }
                 }
             } else {
-                actionItems.add(createAction(
-                        R.id.menu_item_share, R.string.share, R.drawable.ic_share));
-                actionItems.add(createAction(
-                        R.id.delete, R.string.delete_file, R.drawable.ic_delete));
-                actionItems.add(MaterialActionSheetDialog.ActionItem.submenu(
-                        R.id.checksum,
-                        mContext.getString(R.string.checksum),
-                        R.drawable.ic_description,
-                        Arrays.asList(
-                                createAction(R.id.md5, R.string.md5, 0),
-                                createAction(R.id.sha1, R.string.sha1, 0)
-                        )));
+                open.setVisible(true);
+                delete.setVisible(true);
+                checksum.setVisible(true);
             }
 
             if (item.mission.source != null && !item.mission.source.isEmpty()) {
-                actionItems.add(createAction(
-                        R.id.source, R.string.show_info, R.drawable.ic_info_outline));
+                source.setVisible(true);
             }
 
-            actionSheetDialog = MaterialActionSheetDialog.show(
-                    mContext,
-                    item.mission.storage.getName(),
-                    actionItems);
+            popupMenu.show();
         }
 
-        @NonNull
-        private MaterialActionSheetDialog.ActionItem createAction(final int id,
-                                                                  @StringRes final int titleResId,
-                                                                  final int iconResId) {
-            return MaterialActionSheetDialog.ActionItem.create(
-                    id,
-                    mContext.getString(titleResId),
-                    iconResId,
-                    () -> handlePopupItem(this, id));
+        private PopupMenu buildPopup(final View button) {
+            PopupMenu popup = new PopupMenu(mContext, button);
+            popup.inflate(R.menu.mission);
+            popup.setOnMenuItemClickListener(option -> handlePopupItem(this, option));
+
+            return popup;
         }
 
         private void resetSpeedMeasure() {

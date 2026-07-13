@@ -16,16 +16,12 @@ import static org.schabi.newpipe.player.helper.PlayerHelper.getTimeString;
 import static org.schabi.newpipe.player.helper.PlayerHelper.nextResizeModeAndSaveToPrefs;
 import static org.schabi.newpipe.player.helper.PlayerHelper.retrieveSeekDurationFromPreferences;
 
-import android.content.Context;
-import android.content.ContextWrapper;
 import android.content.Intent;
-import android.content.res.ColorStateList;
 import android.content.res.Resources;
 import android.graphics.Bitmap;
 import android.graphics.Color;
 import android.graphics.PorterDuff;
 import android.graphics.PorterDuffColorFilter;
-import android.graphics.drawable.Drawable;
 import android.net.Uri;
 import android.os.Handler;
 import android.os.Looper;
@@ -33,8 +29,9 @@ import android.util.Log;
 import android.view.GestureDetector;
 import android.view.Gravity;
 import android.view.KeyEvent;
+import android.view.Menu;
+import android.view.MenuItem;
 import android.view.View;
-import android.view.ViewParent;
 import android.widget.LinearLayout;
 import android.widget.RelativeLayout;
 import android.widget.SeekBar;
@@ -42,8 +39,10 @@ import android.widget.SeekBar;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.content.res.AppCompatResources;
+import androidx.appcompat.view.ContextThemeWrapper;
+import androidx.appcompat.widget.AppCompatImageButton;
+import androidx.appcompat.widget.PopupMenu;
 import androidx.core.graphics.BitmapCompat;
-import androidx.core.graphics.ColorUtils;
 import androidx.core.graphics.Insets;
 import androidx.core.math.MathUtils;
 import androidx.core.view.ViewCompat;
@@ -59,7 +58,6 @@ import com.google.android.exoplayer2.text.Cue;
 import com.google.android.exoplayer2.ui.AspectRatioFrameLayout;
 import com.google.android.exoplayer2.ui.CaptionStyleCompat;
 import com.google.android.exoplayer2.video.VideoSize;
-import com.google.android.material.bottomsheet.BottomSheetDialog;
 
 import org.schabi.newpipe.App;
 import org.schabi.newpipe.R;
@@ -82,7 +80,6 @@ import org.schabi.newpipe.player.playqueue.PlayQueue;
 import org.schabi.newpipe.player.playqueue.PlayQueueItem;
 import org.schabi.newpipe.player.seekbarpreview.SeekbarPreviewThumbnailHelper;
 import org.schabi.newpipe.player.seekbarpreview.SeekbarPreviewThumbnailHolder;
-import org.schabi.newpipe.ui.MaterialActionSheetDialog;
 import org.schabi.newpipe.util.DeviceUtils;
 import org.schabi.newpipe.util.ExtractorHelper;
 import org.schabi.newpipe.util.ListHelper;
@@ -92,10 +89,8 @@ import org.schabi.newpipe.util.SponsorBlockHelper;
 import org.schabi.newpipe.util.external_communication.KoreUtils;
 import org.schabi.newpipe.util.external_communication.ShareUtils;
 import org.schabi.newpipe.views.MarkableSeekBar;
-import org.schabi.newpipe.views.PilotIconButton;
 import org.schabi.newpipe.views.player.PlayerFastSeekOverlay;
 
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
@@ -106,7 +101,8 @@ import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers;
 import io.reactivex.rxjava3.disposables.CompositeDisposable;
 import io.reactivex.rxjava3.schedulers.Schedulers;
 
-public abstract class VideoPlayerUi extends PlayerUi implements SeekBar.OnSeekBarChangeListener {
+public abstract class VideoPlayerUi extends PlayerUi implements SeekBar.OnSeekBarChangeListener,
+        PopupMenu.OnMenuItemClickListener, PopupMenu.OnDismissListener {
     private static final String TAG = VideoPlayerUi.class.getSimpleName();
 
     // time constants
@@ -134,7 +130,7 @@ public abstract class VideoPlayerUi extends PlayerUi implements SeekBar.OnSeekBa
 
 
     /*//////////////////////////////////////////////////////////////////////////
-    // Action sheets used by player controls
+    // Popup menus ("popup" means that they pop up, not that they belong to the popup player)
     //////////////////////////////////////////////////////////////////////////*/
 
     private static final int POPUP_MENU_ID_QUALITY = 69;
@@ -142,9 +138,11 @@ public abstract class VideoPlayerUi extends PlayerUi implements SeekBar.OnSeekBa
     private static final int POPUP_MENU_ID_PLAYBACK_SPEED = 79;
     private static final int POPUP_MENU_ID_CAPTION = 89;
 
-    protected boolean isSomeActionSheetVisible = false;
-    @Nullable
-    private BottomSheetDialog actionSheetDialog;
+    protected boolean isSomePopupMenuVisible = false;
+    private PopupMenu qualityPopupMenu;
+    private PopupMenu audioTrackPopupMenu;
+    protected PopupMenu playbackSpeedPopupMenu;
+    private PopupMenu captionPopupMenu;
 
 
     /*//////////////////////////////////////////////////////////////////////////
@@ -191,10 +189,21 @@ public abstract class VideoPlayerUi extends PlayerUi implements SeekBar.OnSeekBa
         binding.resizeTextView
                 .setText(PlayerHelper.resizeTypeOf(context, binding.surfaceView.getResizeMode()));
 
-        tintPlaybackSeekBar();
+        binding.playbackSeekBar.getThumb()
+                .setColorFilter(new PorterDuffColorFilter(Color.RED, PorterDuff.Mode.SRC_IN));
+        binding.playbackSeekBar.getProgressDrawable()
+                .setColorFilter(new PorterDuffColorFilter(Color.RED, PorterDuff.Mode.MULTIPLY));
 
-        tintDrawable(binding.progressBarLoadingPanel.getIndeterminateDrawable(),
-                Color.WHITE, PorterDuff.Mode.MULTIPLY);
+        final ContextThemeWrapper themeWrapper = new ContextThemeWrapper(context,
+                R.style.DarkPopupMenu);
+
+        qualityPopupMenu = new PopupMenu(themeWrapper, binding.qualityTextView);
+        audioTrackPopupMenu = new PopupMenu(themeWrapper, binding.audioTrackTextView);
+        playbackSpeedPopupMenu = new PopupMenu(context, binding.playbackSpeed);
+        captionPopupMenu = new PopupMenu(themeWrapper, binding.captionTextView);
+
+        binding.progressBarLoadingPanel.getIndeterminateDrawable()
+                .setColorFilter(new PorterDuffColorFilter(Color.WHITE, PorterDuff.Mode.MULTIPLY));
 
         binding.titleTextView.setSelected(true);
         binding.channelTextView.setSelected(true);
@@ -780,7 +789,7 @@ public abstract class VideoPlayerUi extends PlayerUi implements SeekBar.OnSeekBa
      * @param action the action that is performed when the play/pause button is clicked
      */
     private void updatePlayPauseButton(final PlayButtonAction action) {
-        final PilotIconButton button = binding.playPauseButton;
+        final AppCompatImageButton button = binding.playPauseButton;
         switch (action) {
             case PLAY:
                 button.setContentDescription(context.getString(R.string.play));
@@ -820,7 +829,8 @@ public abstract class VideoPlayerUi extends PlayerUi implements SeekBar.OnSeekBa
         hideControls(DEFAULT_CONTROLS_DURATION, 0);
 
         binding.playbackSeekBar.setEnabled(false);
-        tintPlaybackSeekBar();
+        binding.playbackSeekBar.getThumb()
+                .setColorFilter(new PorterDuffColorFilter(Color.RED, PorterDuff.Mode.SRC_IN));
 
         binding.loadingPanel.setBackgroundColor(Color.BLACK);
         animate(binding.loadingPanel, true, 0);
@@ -838,7 +848,8 @@ public abstract class VideoPlayerUi extends PlayerUi implements SeekBar.OnSeekBa
         updateStreamRelatedViews();
 
         binding.playbackSeekBar.setEnabled(true);
-        tintPlaybackSeekBar();
+        binding.playbackSeekBar.getThumb()
+                .setColorFilter(new PorterDuffColorFilter(Color.RED, PorterDuff.Mode.SRC_IN));
 
         binding.loadingPanel.setVisibility(View.GONE);
 
@@ -854,28 +865,6 @@ public abstract class VideoPlayerUi extends PlayerUi implements SeekBar.OnSeekBa
                 });
 
         binding.getRoot().setKeepScreenOn(true);
-    }
-
-    private void tintPlaybackSeekBar() {
-        final ColorStateList thumbTint = ColorStateList.valueOf(Color.RED);
-        binding.playbackSeekBar.setThumbTintList(thumbTint);
-        binding.playbackSeekBar.setHaloTintList(ColorStateList.valueOf(
-                ColorUtils.setAlphaComponent(Color.RED, 72)));
-        binding.playbackSeekBar.setTrackActiveTintList(thumbTint);
-        binding.playbackSeekBar.setTrackInactiveTintList(ColorStateList.valueOf(
-                ColorUtils.setAlphaComponent(Color.RED, 72)));
-        binding.playbackSeekBar.setSecondaryProgressTintList(ColorStateList.valueOf(
-                ColorUtils.setAlphaComponent(Color.RED, 144)));
-    }
-
-    private void tintDrawable(@Nullable final Drawable drawable,
-                              final int color,
-                              @NonNull final PorterDuff.Mode mode) {
-        if (drawable == null) {
-            return;
-        }
-
-        drawable.setColorFilter(new PorterDuffColorFilter(color, mode));
     }
 
     @Override
@@ -1215,42 +1204,133 @@ public abstract class VideoPlayerUi extends PlayerUi implements SeekBar.OnSeekBa
 
 
     /*//////////////////////////////////////////////////////////////////////////
-    // Action sheets
+    // Popup menus ("popup" means that they pop up, not that they belong to the popup player)
     //////////////////////////////////////////////////////////////////////////*/
-    //region Action sheets
+    //region Popup menus ("popup" means that they pop up, not that they belong to the popup player)
 
     private void buildQualityMenu() {
+        if (qualityPopupMenu == null) {
+            return;
+        }
+        qualityPopupMenu.getMenu().removeGroup(POPUP_MENU_ID_QUALITY);
+
         final List<VideoStream> availableStreams = getAvailableVideoStreams();
+        if (availableStreams.isEmpty()) {
+            return;
+        }
+
+        for (int i = 0; i < availableStreams.size(); i++) {
+            final VideoStream videoStream = availableStreams.get(i);
+            qualityPopupMenu.getMenu().add(POPUP_MENU_ID_QUALITY, i, Menu.NONE, MediaFormat
+                    .getNameById(videoStream.getFormatId()) + " " + videoStream.getResolution());
+        }
+        qualityPopupMenu.setOnMenuItemClickListener(this);
+        qualityPopupMenu.setOnDismissListener(this);
+
         final int selectedStreamIndex = getSelectedVideoStreamIndex(availableStreams);
-        if (selectedStreamIndex >= 0 && selectedStreamIndex < availableStreams.size()) {
+        if (selectedStreamIndex >= 0) {
             binding.qualityTextView.setText(availableStreams.get(selectedStreamIndex)
                     .getResolution());
-        } else if (!availableStreams.isEmpty()) {
+        } else {
             binding.qualityTextView.setText(availableStreams.get(0).getResolution());
         }
     }
 
     private void buildAudioTrackMenu() {
+        if (audioTrackPopupMenu == null) {
+            return;
+        }
+        audioTrackPopupMenu.getMenu().removeGroup(POPUP_MENU_ID_AUDIO_TRACK);
+
         final List<AudioStream> availableStreams = Optional.ofNullable(player.getCurrentMetadata())
                 .flatMap(MediaItemTag::getMaybeAudioTrack)
                 .map(MediaItemTag.AudioTrack::getAudioStreams)
                 .orElse(null);
         if (availableStreams == null || availableStreams.size() < 2) {
-            binding.audioTrackTextView.setVisibility(View.GONE);
             return;
+        }
+
+        for (int i = 0; i < availableStreams.size(); i++) {
+            final AudioStream audioStream = availableStreams.get(i);
+            audioTrackPopupMenu.getMenu().add(POPUP_MENU_ID_AUDIO_TRACK, i, Menu.NONE,
+                    Localization.audioTrackName(context, audioStream));
         }
 
         player.getSelectedAudioStream()
                 .ifPresent(s -> binding.audioTrackTextView.setText(
                         Localization.audioTrackName(context, s)));
         binding.audioTrackTextView.setVisibility(View.VISIBLE);
+        audioTrackPopupMenu.setOnMenuItemClickListener(this);
+        audioTrackPopupMenu.setOnDismissListener(this);
     }
 
     private void buildPlaybackSpeedMenu() {
+        if (playbackSpeedPopupMenu == null) {
+            return;
+        }
+        playbackSpeedPopupMenu.getMenu().removeGroup(POPUP_MENU_ID_PLAYBACK_SPEED);
+
+        for (int i = 0; i < PLAYBACK_SPEEDS.length; i++) {
+            playbackSpeedPopupMenu.getMenu().add(POPUP_MENU_ID_PLAYBACK_SPEED, i, Menu.NONE,
+                    formatSpeed(PLAYBACK_SPEEDS[i]));
+        }
         binding.playbackSpeed.setText(formatSpeed(player.getPlaybackSpeed()));
+        playbackSpeedPopupMenu.setOnMenuItemClickListener(this);
+        playbackSpeedPopupMenu.setOnDismissListener(this);
     }
 
     private void buildCaptionMenu(@NonNull final List<String> availableLanguages) {
+        if (captionPopupMenu == null) {
+            return;
+        }
+        captionPopupMenu.getMenu().removeGroup(POPUP_MENU_ID_CAPTION);
+
+        captionPopupMenu.setOnDismissListener(this);
+
+        // Add option for turning off caption
+        final MenuItem captionOffItem = captionPopupMenu.getMenu().add(POPUP_MENU_ID_CAPTION,
+                0, Menu.NONE, R.string.caption_none);
+        captionOffItem.setOnMenuItemClickListener(menuItem -> {
+            final int textRendererIndex = player.getCaptionRendererIndex();
+            if (textRendererIndex != RENDERER_UNAVAILABLE) {
+                player.getTrackSelector().setParameters(player.getTrackSelector()
+                        .buildUponParameters().setRendererDisabled(textRendererIndex, true));
+            }
+            player.getPrefs().edit()
+                    .remove(context.getString(R.string.caption_user_set_key)).apply();
+            return true;
+        });
+
+        // Add all available captions
+        for (int i = 0; i < availableLanguages.size(); i++) {
+            final String captionLanguage = availableLanguages.get(i);
+            final MenuItem captionItem = captionPopupMenu.getMenu().add(POPUP_MENU_ID_CAPTION,
+                    i + 1, Menu.NONE, captionLanguage);
+            captionItem.setOnMenuItemClickListener(menuItem -> {
+                final int textRendererIndex = player.getCaptionRendererIndex();
+                if (textRendererIndex != RENDERER_UNAVAILABLE) {
+                    // DefaultTrackSelector will select for text tracks in the following order.
+                    // When multiple tracks share the same rank, a random track will be chosen.
+                    // 1. ANY track exactly matching preferred language name
+                    // 2. ANY track exactly matching preferred language stem
+                    // 3. ROLE_FLAG_CAPTION track matching preferred language stem
+                    // 4. ROLE_FLAG_DESCRIBES_MUSIC_AND_SOUND track matching preferred language stem
+                    // This means if a caption track of preferred language is not available,
+                    // then an auto-generated track of that language will be chosen automatically.
+                    player.getTrackSelector().setParameters(player.getTrackSelector()
+                            .buildUponParameters()
+                            .setPreferredTextLanguages(captionLanguage,
+                                    PlayerHelper.captionLanguageStemOf(captionLanguage))
+                            .setPreferredTextRoleFlags(C.ROLE_FLAG_CAPTION)
+                            .setRendererDisabled(textRendererIndex, false));
+                    player.getPrefs().edit().putString(context.getString(
+                            R.string.caption_user_set_key), captionLanguage).apply();
+                }
+                return true;
+            });
+        }
+        captionPopupMenu.setOnDismissListener(this);
+
         // apply caption language from previous user preference
         final int textRendererIndex = player.getCaptionRendererIndex();
         if (textRendererIndex == RENDERER_UNAVAILABLE) {
@@ -1281,123 +1361,61 @@ public abstract class VideoPlayerUi extends PlayerUi implements SeekBar.OnSeekBa
         }
     }
 
-    protected final void showPlaybackSpeedActionSheet() {
-        final List<MaterialActionSheetDialog.ActionItem> actionItems = new ArrayList<>();
-        final float currentSpeed = player.getPlaybackSpeed();
-        for (int i = 0; i < PLAYBACK_SPEEDS.length; i++) {
-            final float speed = PLAYBACK_SPEEDS[i];
-            actionItems.add(MaterialActionSheetDialog.ActionItem.checked(
-                    POPUP_MENU_ID_PLAYBACK_SPEED + i,
-                    formatSpeed(speed),
-                    0,
-                    Math.abs(currentSpeed - speed) < 0.001f,
-                    () -> {
-                        player.setPlaybackSpeed(speed);
-                        binding.playbackSpeed.setText(formatSpeed(speed));
-                    }));
-        }
-        showActionSheet(binding.playbackSpeed.getText(), actionItems);
-    }
-
     protected abstract void onPlaybackSpeedClicked();
 
     private void onQualityClicked() {
-        final List<VideoStream> availableStreams = getAvailableVideoStreams();
-        if (availableStreams.isEmpty()) {
-            return;
-        }
-        final int selectedStreamIndex = getSelectedVideoStreamIndex(availableStreams);
-        final List<MaterialActionSheetDialog.ActionItem> actionItems = new ArrayList<>();
-        for (int i = 0; i < availableStreams.size(); i++) {
-            final VideoStream videoStream = availableStreams.get(i);
-            final int streamIndex = i;
-            actionItems.add(MaterialActionSheetDialog.ActionItem.checked(
-                    POPUP_MENU_ID_QUALITY + i,
-                    buildQualityActionTitle(videoStream),
-                    0,
-                    selectedStreamIndex == i,
-                    () -> onQualityItemClick(streamIndex)));
-        }
-        showActionSheet(binding.qualityTextView.getText(), actionItems);
+        qualityPopupMenu.show();
+        isSomePopupMenuVisible = true;
+
+        player.getSelectedVideoStream()
+                .map(s -> MediaFormat.getNameById(s.getFormatId()) + " " + s.getResolution())
+                .ifPresent(binding.qualityTextView::setText);
     }
 
     private void onAudioTracksClicked() {
-        @Nullable final MediaItemTag currentMetadata = player.getCurrentMetadata();
-        if (currentMetadata == null || currentMetadata.getMaybeAudioTrack().isEmpty()) {
-            return;
-        }
-        final MediaItemTag.AudioTrack audioTrack = currentMetadata.getMaybeAudioTrack().get();
-        final List<AudioStream> availableStreams = audioTrack.getAudioStreams();
-        if (availableStreams.size() < 2) {
-            return;
-        }
-        final int selectedStreamIndex = audioTrack.getSelectedAudioStreamIndex();
-        final List<MaterialActionSheetDialog.ActionItem> actionItems = new ArrayList<>();
-        for (int i = 0; i < availableStreams.size(); i++) {
-            final String title = Localization.audioTrackName(context, availableStreams.get(i));
-            final int streamIndex = i;
-            actionItems.add(MaterialActionSheetDialog.ActionItem.checked(
-                    POPUP_MENU_ID_AUDIO_TRACK + i,
-                    title,
-                    0,
-                    selectedStreamIndex == i,
-                    () -> onAudioTrackItemClick(streamIndex, title)));
-        }
-        showActionSheet(binding.audioTrackTextView.getText(), actionItems);
+        audioTrackPopupMenu.show();
+        isSomePopupMenuVisible = true;
     }
 
-    private void onQualityItemClick(final int menuItemIndex) {
+    /**
+     * Called when an item of the quality selector or the playback speed selector is selected.
+     */
+    @Override
+    public boolean onMenuItemClick(@NonNull final MenuItem menuItem) {
+        if (DEBUG) {
+            Log.d(TAG, "onMenuItemClick() called with: "
+                    + "menuItem = [" + menuItem + "], "
+                    + "menuItem.getItemId = [" + menuItem.getItemId() + "]");
+        }
+
+        if (menuItem.getGroupId() == POPUP_MENU_ID_QUALITY) {
+            onQualityItemClick(menuItem);
+            return true;
+        } else if (menuItem.getGroupId() == POPUP_MENU_ID_AUDIO_TRACK) {
+            onAudioTrackItemClick(menuItem);
+            return true;
+        } else if (menuItem.getGroupId() == POPUP_MENU_ID_PLAYBACK_SPEED) {
+            final int speedIndex = menuItem.getItemId();
+            final float speed = PLAYBACK_SPEEDS[speedIndex];
+
+            player.setPlaybackSpeed(speed);
+            binding.playbackSpeed.setText(formatSpeed(speed));
+        }
+
+        return false;
+    }
+
+    private void onQualityItemClick(@NonNull final MenuItem menuItem) {
+        final int menuItemIndex = menuItem.getItemId();
         final List<VideoStream> availableStreams = getAvailableVideoStreams();
         final int selectedStreamIndex = getSelectedVideoStreamIndex(availableStreams);
         if (selectedStreamIndex == menuItemIndex || availableStreams.size() <= menuItemIndex) {
             return;
         }
 
-        final VideoStream selectedStream = availableStreams.get(menuItemIndex);
-        player.setPlaybackQuality(selectedStream);
-        binding.qualityTextView.setText(selectedStream.getResolution());
-    }
+        player.setPlaybackQuality(availableStreams.get(menuItemIndex));
 
-    @NonNull
-    private String buildQualityActionTitle(@NonNull final VideoStream videoStream) {
-        final String formatName = MediaFormat.getNameById(videoStream.getFormatId());
-        return formatName.isEmpty()
-                ? videoStream.getResolution()
-                : formatName + " " + videoStream.getResolution();
-    }
-
-    private void onAudioTrackItemClick(final int menuItemIndex,
-                                       @NonNull final CharSequence title) {
-        @Nullable final MediaItemTag currentMetadata = player.getCurrentMetadata();
-        if (currentMetadata == null || currentMetadata.getMaybeAudioTrack().isEmpty()) {
-            return;
-        }
-
-        final MediaItemTag.AudioTrack audioTrack =
-                currentMetadata.getMaybeAudioTrack().get();
-        final List<AudioStream> availableStreams = audioTrack.getAudioStreams();
-        final int selectedStreamIndex = audioTrack.getSelectedAudioStreamIndex();
-        if (selectedStreamIndex == menuItemIndex || availableStreams.size() <= menuItemIndex) {
-            return;
-        }
-
-        final String newAudioTrack = availableStreams.get(menuItemIndex).getAudioTrackId();
-        player.setAudioTrack(newAudioTrack);
-
-        binding.audioTrackTextView.setText(title);
-    }
-
-    private void onActionSheetDismissed() {
-        if (DEBUG) {
-            Log.d(TAG, "onActionSheetDismissed() called");
-        }
-        isSomeActionSheetVisible = false;
-        actionSheetDialog = null;
-
-        if (player.isPlaying()) {
-            hideControls(DEFAULT_CONTROLS_DURATION, 0);
-            hideSystemUIIfNeeded();
-        }
+        binding.qualityTextView.setText(menuItem.getTitle());
     }
 
     @NonNull
@@ -1419,7 +1437,8 @@ public abstract class VideoPlayerUi extends PlayerUi implements SeekBar.OnSeekBa
                 .orElse(Collections.emptyList());
     }
 
-    private int getSelectedVideoStreamIndex(@NonNull final List<VideoStream> availableStreams) {
+    private int getSelectedVideoStreamIndex(
+            @NonNull final List<VideoStream> availableStreams) {
         @Nullable final MediaItemTag currentMetadata = player.getCurrentMetadata();
         if (currentMetadata == null || currentMetadata.getMaybeQuality().isEmpty()) {
             return -1;
@@ -1432,131 +1451,55 @@ public abstract class VideoPlayerUi extends PlayerUi implements SeekBar.OnSeekBa
                 : -1;
     }
 
+    private void onAudioTrackItemClick(@NonNull final MenuItem menuItem) {
+        final int menuItemIndex = menuItem.getItemId();
+        @Nullable final MediaItemTag currentMetadata = player.getCurrentMetadata();
+        if (currentMetadata == null || currentMetadata.getMaybeAudioTrack().isEmpty()) {
+            return;
+        }
+
+        final MediaItemTag.AudioTrack audioTrack =
+                currentMetadata.getMaybeAudioTrack().get();
+        final List<AudioStream> availableStreams = audioTrack.getAudioStreams();
+        final int selectedStreamIndex = audioTrack.getSelectedAudioStreamIndex();
+        if (selectedStreamIndex == menuItemIndex || availableStreams.size() <= menuItemIndex) {
+            return;
+        }
+
+        final String newAudioTrack = availableStreams.get(menuItemIndex).getAudioTrackId();
+        player.setAudioTrack(newAudioTrack);
+
+        binding.audioTrackTextView.setText(menuItem.getTitle());
+    }
+
+    /**
+     * Called when some popup menu is dismissed.
+     */
+    @Override
+    public void onDismiss(@Nullable final PopupMenu menu) {
+        if (DEBUG) {
+            Log.d(TAG, "onDismiss() called with: menu = [" + menu + "]");
+        }
+        isSomePopupMenuVisible = false; //TODO check if this works
+        player.getSelectedVideoStream()
+                .ifPresent(s -> binding.qualityTextView.setText(s.getResolution()));
+
+        if (player.isPlaying()) {
+            hideControls(DEFAULT_CONTROLS_DURATION, 0);
+            hideSystemUIIfNeeded();
+        }
+    }
+
     private void onCaptionClicked() {
         if (DEBUG) {
             Log.d(TAG, "onCaptionClicked() called");
         }
-
-        final Tracks currentTracks = player.getExoPlayer().getCurrentTracks();
-        final List<String> availableLanguages = currentTracks
-                .getGroups()
-                .stream()
-                .filter(trackGroupInfo -> C.TRACK_TYPE_TEXT == trackGroupInfo.getType())
-                .map(Tracks.Group::getMediaTrackGroup)
-                .filter(textTrack -> textTrack.length > 0)
-                .map(textTrack -> textTrack.getFormat(0).language)
-                .collect(Collectors.toList());
-        if (availableLanguages.isEmpty()) {
-            return;
-        }
-
-        final String userPreferredLanguage =
-                player.getPrefs().getString(context.getString(R.string.caption_user_set_key), null);
-        final List<MaterialActionSheetDialog.ActionItem> actionItems = new ArrayList<>();
-        actionItems.add(MaterialActionSheetDialog.ActionItem.checked(
-                POPUP_MENU_ID_CAPTION,
-                context.getString(R.string.caption_none),
-                0,
-                userPreferredLanguage == null,
-                this::disableCaptionRenderer));
-        for (int i = 0; i < availableLanguages.size(); i++) {
-            final String captionLanguage = availableLanguages.get(i);
-            actionItems.add(MaterialActionSheetDialog.ActionItem.checked(
-                    POPUP_MENU_ID_CAPTION + i + 1,
-                    captionLanguage,
-                    0,
-                    captionLanguage.equals(userPreferredLanguage),
-                    () -> enableCaptionLanguage(captionLanguage)));
-        }
-        showActionSheet(binding.captionTextView.getText(), actionItems);
+        captionPopupMenu.show();
+        isSomePopupMenuVisible = true;
     }
 
-    public boolean isSomeActionSheetVisible() {
-        return isSomeActionSheetVisible;
-    }
-
-    private void disableCaptionRenderer() {
-        final int textRendererIndex = player.getCaptionRendererIndex();
-        if (textRendererIndex != RENDERER_UNAVAILABLE) {
-            player.getTrackSelector().setParameters(player.getTrackSelector()
-                    .buildUponParameters().setRendererDisabled(textRendererIndex, true));
-        }
-        player.getPrefs().edit().remove(context.getString(R.string.caption_user_set_key)).apply();
-        binding.captionTextView.setText(R.string.caption_none);
-    }
-
-    private void enableCaptionLanguage(@NonNull final String captionLanguage) {
-        final int textRendererIndex = player.getCaptionRendererIndex();
-        if (textRendererIndex == RENDERER_UNAVAILABLE) {
-            return;
-        }
-
-        player.getTrackSelector().setParameters(player.getTrackSelector()
-                .buildUponParameters()
-                .setPreferredTextLanguages(
-                        captionLanguage,
-                        PlayerHelper.captionLanguageStemOf(captionLanguage))
-                .setPreferredTextRoleFlags(C.ROLE_FLAG_CAPTION)
-                .setRendererDisabled(textRendererIndex, false));
-        player.getPrefs().edit()
-                .putString(context.getString(R.string.caption_user_set_key), captionLanguage)
-                .apply();
-        binding.captionTextView.setText(captionLanguage);
-    }
-
-    private void showActionSheet(@Nullable final CharSequence title,
-                                 @NonNull final List<MaterialActionSheetDialog.ActionItem> items) {
-        if (items.isEmpty()) {
-            return;
-        }
-        if (actionSheetDialog != null) {
-            actionSheetDialog.dismiss();
-        }
-        @Nullable final Context actionSheetContext = resolveActionSheetContext();
-        if (actionSheetContext == null) {
-            isSomeActionSheetVisible = false;
-            return;
-        }
-        actionSheetDialog = MaterialActionSheetDialog.show(
-                actionSheetContext,
-                title,
-                items,
-                this::onActionSheetDismissed);
-        isSomeActionSheetVisible = actionSheetDialog != null;
-    }
-
-    @Nullable
-    private Context resolveActionSheetContext() {
-        final Context rootContext = binding.getRoot().getContext();
-        if (findActivity(rootContext) != null) {
-            return rootContext;
-        }
-
-        ViewParent parent = binding.getRoot().getParent();
-        while (parent instanceof View) {
-            final Context parentContext = ((View) parent).getContext();
-            if (findActivity(parentContext) != null) {
-                return parentContext;
-            }
-            parent = parent.getParent();
-        }
-        return null;
-    }
-
-    @Nullable
-    private static Context findActivity(@Nullable final Context context) {
-        Context currentContext = context;
-        while (currentContext instanceof ContextWrapper) {
-            if (currentContext instanceof android.app.Activity) {
-                return currentContext;
-            }
-            final Context baseContext = ((ContextWrapper) currentContext).getBaseContext();
-            if (baseContext == currentContext) {
-                return null;
-            }
-            currentContext = baseContext;
-        }
-        return null;
+    public boolean isSomePopupMenuVisible() {
+        return isSomePopupMenuVisible;
     }
     //endregion
 
@@ -1657,8 +1600,7 @@ public abstract class VideoPlayerUi extends PlayerUi implements SeekBar.OnSeekBa
             showHideShadow(true, DEFAULT_CONTROLS_DURATION);
             animate(binding.playbackControlRoot, true, DEFAULT_CONTROLS_DURATION,
                     AnimationType.ALPHA, 0, () -> {
-                        if (player.getCurrentState() == STATE_PLAYING
-                                && !isSomeActionSheetVisible) {
+                        if (player.getCurrentState() == STATE_PLAYING && !isSomePopupMenuVisible) {
                             if (v == binding.playPauseButton
                                     // Hide controls in fullscreen immediately
                                     || (v == binding.screenRotationButton && isFullscreen())) {

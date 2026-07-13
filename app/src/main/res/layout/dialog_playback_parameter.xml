@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
@@ -24,7 +23,7 @@
             android:layout_centerHorizontal="true"
             android:gravity="center"
             android:text="@string/playback_tempo"
-            android:textColor="?attr/colorPrimary"
+            android:textColor="?attr/colorAccent"
             android:textStyle="bold" />
 
         <RelativeLayout
@@ -46,7 +45,7 @@
                 android:focusable="true"
                 android:gravity="center"
                 android:text="--%"
-                android:textColor="?attr/colorPrimary"
+                android:textColor="?attr/colorAccent"
                 android:textStyle="bold"
                 tools:ignore="HardcodedText"
                 tools:text="-5%" />
@@ -68,7 +67,7 @@
                     android:layout_marginStart="4dp"
                     android:gravity="center"
                     android:text="-.--x"
-                    android:textColor="?attr/colorPrimary"
+                    android:textColor="?attr/colorAccent"
                     tools:ignore="HardcodedText"
                     tools:text="1.00x" />
 
@@ -79,7 +78,7 @@
                     android:layout_centerHorizontal="true"
                     android:gravity="center"
                     android:text="---%"
-                    android:textColor="?attr/colorPrimary"
+                    android:textColor="?attr/colorAccent"
                     android:textStyle="bold"
                     tools:ignore="HardcodedText"
                     tools:text="100%" />
@@ -92,20 +91,18 @@
                     android:layout_marginEnd="4dp"
                     android:gravity="center"
                     android:text="---%"
-                    android:textColor="?attr/colorPrimary"
+                    android:textColor="?attr/colorAccent"
                     tools:ignore="HardcodedText"
                     tools:text="300%" />
 
-                <org.schabi.newpipe.views.FocusAwareSeekBar
+                <androidx.appcompat.widget.AppCompatSeekBar
                     android:id="@+id/tempoSeekbar"
-                    style="@style/Widget.NewPipe.SeekBar"
+                    style="@style/Widget.AppCompat.SeekBar"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_below="@id/tempoCurrentText"
                     android:paddingBottom="2dp"
-                    android:value="5000"
-                    android:valueFrom="0"
-                    android:valueTo="10000" />
+                    tools:progress="50" />
             </RelativeLayout>
 
             <org.schabi.newpipe.views.NewPipeTextView
@@ -120,7 +117,7 @@
                 android:focusable="true"
                 android:gravity="center"
                 android:text="+-%"
-                android:textColor="?attr/colorPrimary"
+                android:textColor="?attr/colorAccent"
                 android:textStyle="bold"
                 tools:ignore="HardcodedText"
                 tools:text="+5%" />
@@ -135,7 +132,7 @@
             android:layout_marginTop="5dp"
             android:layout_marginEnd="12dp"
             android:layout_marginBottom="5dp"
-            android:background="?attr/colorOutlineVariant" />
+            android:background="?attr/separator_color" />
 
         <org.schabi.newpipe.views.NewPipeTextView
             android:id="@+id/pitchControlText"
@@ -145,7 +142,7 @@
             android:layout_centerHorizontal="true"
             android:gravity="center"
             android:text="@string/playback_pitch"
-            android:textColor="?attr/colorPrimary"
+            android:textColor="?attr/colorAccent"
             android:textStyle="bold" />
 
         <ImageView
@@ -180,7 +177,7 @@
                 android:focusable="true"
                 android:gravity="center"
                 android:text="@string/percent"
-                android:textColor="?attr/colorPrimary" />
+                android:textColor="?attr/colorAccent" />
 
             <org.schabi.newpipe.views.NewPipeTextView
                 android:id="@+id/pitchControlModeSemitone"
@@ -192,7 +189,7 @@
                 android:focusable="true"
                 android:gravity="center"
                 android:text="@string/semitone"
-                android:textColor="?attr/colorPrimary" />
+                android:textColor="?attr/colorAccent" />
 
         </LinearLayout>
 
@@ -220,7 +217,7 @@
                     android:focusable="true"
                     android:gravity="center"
                     android:text="--%"
-                    android:textColor="?attr/colorPrimary"
+                    android:textColor="?attr/colorAccent"
                     android:textStyle="bold"
                     tools:ignore="HardcodedText"
                     tools:text="-5%" />
@@ -243,7 +240,7 @@
                         android:layout_marginStart="4dp"
                         android:gravity="center"
                         android:text="---%"
-                        android:textColor="?attr/colorPrimary"
+                        android:textColor="?attr/colorAccent"
                         tools:ignore="HardcodedText"
                         tools:text="25%" />
 
@@ -254,7 +251,7 @@
                         android:layout_centerHorizontal="true"
                         android:gravity="center"
                         android:text="---%"
-                        android:textColor="?attr/colorPrimary"
+                        android:textColor="?attr/colorAccent"
                         android:textStyle="bold"
                         tools:ignore="HardcodedText"
                         tools:text="100%" />
@@ -267,20 +264,18 @@
                         android:layout_marginEnd="4dp"
                         android:gravity="center"
                         android:text="---%"
-                        android:textColor="?attr/colorPrimary"
+                        android:textColor="?attr/colorAccent"
                         tools:ignore="HardcodedText"
                         tools:text="300%" />
 
-                    <org.schabi.newpipe.views.FocusAwareSeekBar
+                    <androidx.appcompat.widget.AppCompatSeekBar
                         android:id="@+id/pitchPercentSeekbar"
-                        style="@style/Widget.NewPipe.SeekBar"
+                        style="@style/Widget.AppCompat.SeekBar"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_below="@+id/pitchPercentCurrentText"
                         android:paddingBottom="2dp"
-                        android:value="5000"
-                        android:valueFrom="0"
-                        android:valueTo="10000" />
+                        tools:progress="50" />
                 </RelativeLayout>
 
                 <org.schabi.newpipe.views.NewPipeTextView
@@ -295,7 +290,7 @@
                     android:focusable="true"
                     android:gravity="center"
                     android:text="+-%"
-                    android:textColor="?attr/colorPrimary"
+                    android:textColor="?attr/colorAccent"
                     android:textStyle="bold"
                     tools:ignore="HardcodedText"
                     tools:text="+5%" />
@@ -319,7 +314,7 @@
                     android:focusable="true"
                     android:gravity="center"
                     android:text="♭"
-                    android:textColor="?attr/colorPrimary"
+                    android:textColor="?attr/colorAccent"
                     android:textSize="24sp"
                     android:textStyle="bold"
                     tools:ignore="HardcodedText" />
@@ -342,7 +337,7 @@
                         android:layout_marginStart="4dp"
                         android:gravity="center"
                         android:text="-12"
-                        android:textColor="?attr/colorPrimary"
+                        android:textColor="?attr/colorAccent"
                         tools:ignore="HardcodedText" />
 
                     <org.schabi.newpipe.views.NewPipeTextView
@@ -351,7 +346,7 @@
                         android:layout_height="wrap_content"
                         android:layout_centerHorizontal="true"
                         android:gravity="center"
-                        android:textColor="?attr/colorPrimary"
+                        android:textColor="?attr/colorAccent"
                         android:textStyle="bold"
                         tools:text="0"
                         tools:ignore="RelativeOverlap" />
@@ -364,19 +359,18 @@
                         android:layout_marginEnd="4dp"
                         android:gravity="center"
                         android:text="+12"
-                        android:textColor="?attr/colorPrimary"
+                        android:textColor="?attr/colorAccent"
                         tools:ignore="HardcodedText" />
 
-                    <org.schabi.newpipe.views.FocusAwareSeekBar
+                    <androidx.appcompat.widget.AppCompatSeekBar
                         android:id="@+id/pitchSemitoneSeekbar"
-                        style="@style/Widget.NewPipe.SeekBar"
+                        style="@style/Widget.AppCompat.SeekBar"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_below="@+id/pitchSemitoneCurrentText"
+                        android:max="24"
                         android:paddingBottom="2dp"
-                        android:value="12"
-                        android:valueFrom="0"
-                        android:valueTo="24" />
+                        android:progress="12" />
                 </RelativeLayout>
 
                 <org.schabi.newpipe.views.NewPipeTextView
@@ -391,7 +385,7 @@
                     android:focusable="true"
                     android:gravity="center"
                     android:text="♯"
-                    android:textColor="?attr/colorPrimary"
+                    android:textColor="?attr/colorAccent"
                     android:textSize="20sp"
                     android:textStyle="bold"
                     tools:ignore="HardcodedText" />
@@ -407,7 +401,7 @@
             android:layout_marginTop="5dp"
             android:layout_marginEnd="12dp"
             android:layout_marginBottom="5dp"
-            android:background="?attr/colorOutlineVariant" />
+            android:background="?attr/separator_color" />
 
         <LinearLayout
             android:id="@+id/stepSizeSelector"
@@ -424,7 +418,7 @@
                 android:clickable="false"
                 android:gravity="center"
                 android:text="@string/playback_step"
-                android:textColor="?attr/colorPrimary"
+                android:textColor="?attr/colorAccent"
                 android:textStyle="bold" />
 
             <org.schabi.newpipe.views.NewPipeTextView
@@ -436,7 +430,7 @@
                 android:clickable="true"
                 android:focusable="true"
                 android:gravity="center"
-                android:textColor="?attr/colorPrimary"
+                android:textColor="?attr/colorAccent"
                 tools:text="1%" />
 
             <org.schabi.newpipe.views.NewPipeTextView
@@ -448,7 +442,7 @@
                 android:clickable="true"
                 android:focusable="true"
                 android:gravity="center"
-                android:textColor="?attr/colorPrimary"
+                android:textColor="?attr/colorAccent"
                 tools:text="5%" />
 
             <org.schabi.newpipe.views.NewPipeTextView
@@ -460,7 +454,7 @@
                 android:clickable="true"
                 android:focusable="true"
                 android:gravity="center"
-                android:textColor="?attr/colorPrimary"
+                android:textColor="?attr/colorAccent"
                 tools:text="10%" />
 
             <org.schabi.newpipe.views.NewPipeTextView
@@ -472,7 +466,7 @@
                 android:clickable="true"
                 android:focusable="true"
                 android:gravity="center"
-                android:textColor="?attr/colorPrimary"
+                android:textColor="?attr/colorAccent"
                 tools:text="25%" />
 
             <org.schabi.newpipe.views.NewPipeTextView
@@ -484,7 +478,7 @@
                 android:clickable="true"
                 android:focusable="true"
                 android:gravity="center"
-                android:textColor="?attr/colorPrimary"
+                android:textColor="?attr/colorAccent"
                 tools:text="100%" />
         </LinearLayout>
 
@@ -497,7 +491,7 @@
             android:layout_marginTop="5dp"
             android:layout_marginEnd="12dp"
             android:layout_marginBottom="5dp"
-            android:background="?attr/colorOutlineVariant" />
+            android:background="?attr/separator_color" />
 
         <LinearLayout
             android:id="@+id/additionalOptions"
@@ -506,24 +500,22 @@
             android:layout_below="@id/separatorCheckbox"
             android:orientation="vertical">
 
-            <com.google.android.material.checkbox.MaterialCheckBox
+            <CheckBox
                 android:id="@+id/unhookCheckbox"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:checked="false"
                 android:clickable="true"
                 android:focusable="true"
-                app:useMaterialThemeColors="true"
                 android:text="@string/unhook_checkbox" />
 
-            <com.google.android.material.checkbox.MaterialCheckBox
+            <CheckBox
                 android:id="@+id/skipSilenceCheckbox"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:checked="false"
                 android:clickable="true"
                 android:focusable="true"
-                app:useMaterialThemeColors="true"
                 android:text="@string/skip_silence_checkbox" />
 
         </LinearLayout>

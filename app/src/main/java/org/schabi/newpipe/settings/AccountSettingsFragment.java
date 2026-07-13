@@ -12,7 +12,7 @@ public class AccountSettingsFragment extends BasePreferenceFragment {
 
     @Override
     public void onCreatePreferences(final Bundle savedInstanceState, final String rootKey) {
-        inflatePreferences(R.xml.account_settings);
+        addPreferencesFromResource(R.xml.account_settings);
 
         final Preference clearWebViewCookies = findPreference("clear_webview_cookies");
         if (clearWebViewCookies != null) {

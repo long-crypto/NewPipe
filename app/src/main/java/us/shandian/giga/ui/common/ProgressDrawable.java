@@ -6,7 +6,6 @@ import android.graphics.Paint;
 import android.graphics.Path;
 import android.graphics.PixelFormat;
 import android.graphics.Rect;
-import android.graphics.RectF;
 import android.graphics.drawable.Drawable;
 import android.os.Handler;
 import android.os.Looper;
@@ -54,15 +53,13 @@ public class ProgressDrawable extends Drawable {
 
     @Override
     public void draw(@NonNull Canvas canvas) {
-        final int width = getBounds().width();
-        final int height = getBounds().height();
-        final float radius = height / 2f;
-        final RectF roundedRect = new RectF(0, 0, width, height);
+        int width = getBounds().width();
+        int height = getBounds().height();
 
-        final Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG);
+        Paint paint = new Paint();
 
         paint.setColor(mBackgroundColor);
-        canvas.drawRoundRect(roundedRect, radius, radius, paint);
+        canvas.drawRect(0, 0, width, height, paint);
 
         paint.setColor(mForegroundColor);
 
@@ -70,13 +67,12 @@ public class ProgressDrawable extends Drawable {
             if (mMarqueeSize < 1) setupMarquee(width, height);
 
             int size = mMarqueeSize;
-            Paint paint2 = new Paint(Paint.ANTI_ALIAS_FLAG);
+            Paint paint2 = new Paint();
             paint2.setColor(mForegroundColor);
             paint2.setStrokeWidth(size);
             paint2.setStyle(Paint.Style.STROKE);
 
             size *= 2;
-            final int marqueeWidth = width + size * 2;
 
             if (mMarqueeProgress >= size) {
                 mMarqueeProgress = 1;
@@ -85,8 +81,9 @@ public class ProgressDrawable extends Drawable {
             }
 
             // render marquee
+            width += size * 2;
             Path marquee = new Path();
-            for (int i = -size; i < marqueeWidth; i += size) {
+            for (int i = -size; i < width; i += size) {
                 marquee.addPath(mMarqueeLine, ((float)i + mMarqueeProgress), 0);
             }
             marquee.close();
@@ -101,8 +98,7 @@ public class ProgressDrawable extends Drawable {
             return;
         }
 
-        canvas.drawRoundRect(new RectF(0, 0, (float) (mProgress * width), height),
-                radius, radius, paint);
+        canvas.drawRect(0, 0, (int) (mProgress * width), height, paint);
     }
 
     @Override

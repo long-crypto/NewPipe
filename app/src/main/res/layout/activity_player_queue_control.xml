@@ -5,7 +5,6 @@
     android:id="@+id/main_content"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="?android:attr/windowBackground"
     android:fitsSystemWindows="true"
     tools:context="org.schabi.newpipe.player.PlayQueueActivity">
 
@@ -13,21 +12,20 @@
         android:id="@+id/appbar"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:background="?attr/colorSurfaceContainer"
-        android:theme="@style/ToolbarTheme"
-        app:popupTheme="@style/ToolbarPopupTheme">
+        android:theme="@style/ThemeOverlay.AppCompat.DayNight.ActionBar"
+        app:popupTheme="@style/ThemeOverlay.AppCompat.DayNight.ActionBar">
 
-        <com.google.android.material.appbar.MaterialToolbar
+        <androidx.appcompat.widget.Toolbar
             android:id="@+id/toolbar"
             android:layout_width="match_parent"
             android:layout_height="?attr/actionBarSize"
             android:layout_weight="1"
-            android:background="?attr/colorSurfaceContainer"
+            android:background="?attr/colorPrimary"
             android:theme="@style/ToolbarTheme"
             app:layout_scrollFlags="scroll|enterAlways"
-            app:navigationIconTint="?attr/colorOnSurface"
-            app:subtitleTextColor="?attr/colorOnSurfaceVariant"
-            app:titleTextColor="?attr/colorOnSurface"
+            app:navigationIconTint="?attr/actionColor"
+            app:subtitleTextColor="?attr/actionColor"
+            app:titleTextColor="?attr/actionColor"
             app:title="@string/app_name" />
 
     </com.google.android.material.appbar.AppBarLayout>
@@ -121,9 +119,9 @@
             tools:text="1:06:29" />
 
 
-        <org.schabi.newpipe.views.FocusAwareSeekBar
+        <androidx.appcompat.widget.AppCompatSeekBar
             android:id="@+id/seek_bar"
-            style="@style/Widget.NewPipe.SeekBar"
+            style="@style/Widget.AppCompat.SeekBar"
             android:layout_width="0dp"
             android:layout_height="match_parent"
             android:layout_weight="1"
@@ -131,9 +129,8 @@
             android:paddingTop="6dp"
             android:paddingEnd="12dp"
             android:paddingBottom="4dp"
-            android:value="25"
-            android:valueFrom="0"
-            android:valueTo="100" />
+            tools:progress="25"
+            tools:secondaryProgress="50" />
 
         <org.schabi.newpipe.views.NewPipeTextView
             android:id="@+id/end_time"
@@ -168,72 +165,72 @@
         android:layout_marginBottom="12dp"
         tools:ignore="RtlHardcoded">
 
-        <org.schabi.newpipe.views.PilotIconButton
+        <ImageButton
             android:id="@+id/control_repeat"
-            style="@style/Widget.NewPipe.IconButton"
-            android:layout_width="@dimen/player_control_button_size"
-            android:layout_height="@dimen/player_control_button_size"
+            android:layout_width="30dp"
+            android:layout_height="30dp"
             android:layout_centerVertical="true"
             android:layout_marginLeft="5dp"
             android:layout_marginRight="5dp"
             android:layout_toLeftOf="@+id/control_backward"
+            android:background="?attr/selectableItemBackgroundBorderless"
             android:clickable="true"
-            android:contentDescription="@string/notification_action_repeat"
             android:focusable="true"
-            app:icon="@drawable/ic_repeat"
-            app:iconTint="?attr/colorAccent"
+            android:scaleType="fitXY"
+            android:src="@drawable/ic_repeat"
+            app:tint="?attr/colorAccent"
             tools:ignore="ContentDescription" />
 
-        <org.schabi.newpipe.views.PilotIconButton
+        <androidx.appcompat.widget.AppCompatImageButton
             android:id="@+id/control_backward"
-            style="@style/Widget.NewPipe.IconButton"
-            android:layout_width="@dimen/player_control_button_size"
-            android:layout_height="@dimen/player_control_button_size"
+            android:layout_width="32dp"
+            android:layout_height="32dp"
             android:layout_centerVertical="true"
             android:layout_marginLeft="5dp"
             android:layout_toLeftOf="@+id/control_fast_rewind"
+            android:background="?attr/selectableItemBackgroundBorderless"
             android:clickable="true"
-            android:contentDescription="@string/previous_stream"
             android:focusable="true"
-            app:icon="@drawable/ic_previous"
-            app:iconTint="?attr/colorAccent"
+            android:scaleType="fitCenter"
+            android:src="@drawable/ic_previous"
+            android:tint="?attr/colorAccent"
             tools:ignore="ContentDescription" />
 
-        <org.schabi.newpipe.views.PilotIconButton
+        <ImageButton
             android:id="@+id/control_fast_rewind"
-            style="@style/Widget.NewPipe.IconButton"
-            android:layout_width="@dimen/player_control_button_size"
-            android:layout_height="@dimen/player_control_button_size"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
             android:layout_centerVertical="true"
             android:layout_marginLeft="5dp"
             android:layout_toLeftOf="@id/control_play_pause"
+            android:background="?attr/selectableItemBackgroundBorderless"
             android:clickable="true"
-            android:contentDescription="@string/rewind"
             android:focusable="true"
-            app:icon="@drawable/exo_controls_rewind"
-            app:iconTint="?attr/colorAccent" />
+            android:scaleType="fitCenter"
+            android:src="@drawable/exo_controls_rewind"
+            app:tint="?attr/colorAccent" />
 
-        <org.schabi.newpipe.views.PilotIconButton
+        <ImageButton
             android:id="@+id/control_play_pause"
-            style="@style/Widget.NewPipe.IconButton"
-            android:layout_width="@dimen/player_control_large_button_size"
-            android:layout_height="@dimen/player_control_large_button_size"
+            android:layout_width="50dp"
+            android:layout_height="50dp"
             android:layout_centerHorizontal="true"
             android:layout_centerVertical="true"
             android:layout_marginLeft="5dp"
             android:layout_marginRight="5dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
             android:clickable="true"
-            android:contentDescription="@string/pause"
             android:focusable="true"
-            app:icon="@drawable/ic_pause"
-            app:iconTint="?attr/colorAccent"
+            android:scaleType="fitCenter"
+            android:src="@drawable/ic_pause"
+            app:tint="?attr/colorAccent"
             tools:ignore="ContentDescription" />
 
-        <com.google.android.material.progressindicator.CircularProgressIndicator
+        <ProgressBar
             android:id="@+id/control_progress_bar"
-            style="@style/Widget.NewPipe.CircularProgressIndicator.OnDark.Small"
-            android:layout_width="@dimen/player_control_large_button_size"
-            android:layout_height="@dimen/player_control_large_button_size"
+            style="?android:attr/progressBarStyleLargeInverse"
+            android:layout_width="50dp"
+            android:layout_height="50dp"
             android:layout_centerInParent="true"
             android:layout_centerHorizontal="true"
             android:layout_centerVertical="true"
@@ -243,53 +240,55 @@
             android:clickable="false"
             android:indeterminate="true"
             android:padding="2dp"
+            android:scaleType="fitCenter"
+            android:tint="?attr/colorAccent"
             android:visibility="invisible"
             tools:visibility="visible" />
 
 
-        <org.schabi.newpipe.views.PilotIconButton
+        <ImageButton
             android:id="@+id/control_fast_forward"
-            style="@style/Widget.NewPipe.IconButton"
-            android:layout_width="@dimen/player_control_button_size"
-            android:layout_height="@dimen/player_control_button_size"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
             android:layout_centerVertical="true"
             android:layout_marginRight="5dp"
             android:layout_toRightOf="@id/control_play_pause"
+            android:background="?attr/selectableItemBackgroundBorderless"
             android:clickable="true"
-            android:contentDescription="@string/forward"
             android:focusable="true"
-            app:icon="@drawable/exo_controls_fastforward"
-            app:iconTint="?attr/colorAccent" />
+            android:scaleType="fitCenter"
+            android:src="@drawable/exo_controls_fastforward"
+            app:tint="?attr/colorAccent" />
 
-        <org.schabi.newpipe.views.PilotIconButton
+        <androidx.appcompat.widget.AppCompatImageButton
             android:id="@+id/control_forward"
-            style="@style/Widget.NewPipe.IconButton"
-            android:layout_width="@dimen/player_control_button_size"
-            android:layout_height="@dimen/player_control_button_size"
+            android:layout_width="32dp"
+            android:layout_height="32dp"
             android:layout_centerVertical="true"
             android:layout_marginRight="5dp"
             android:layout_toRightOf="@+id/control_fast_forward"
+            android:background="?attr/selectableItemBackgroundBorderless"
             android:clickable="true"
-            android:contentDescription="@string/next_stream"
             android:focusable="true"
-            app:icon="@drawable/ic_next"
-            app:iconTint="?attr/colorAccent"
+            android:scaleType="fitCenter"
+            android:src="@drawable/ic_next"
+            android:tint="?attr/colorAccent"
             tools:ignore="ContentDescription" />
 
-        <org.schabi.newpipe.views.PilotIconButton
+        <ImageButton
             android:id="@+id/control_shuffle"
-            style="@style/Widget.NewPipe.IconButton"
-            android:layout_width="@dimen/player_control_button_size"
-            android:layout_height="@dimen/player_control_button_size"
+            android:layout_width="30dp"
+            android:layout_height="30dp"
             android:layout_centerVertical="true"
             android:layout_marginLeft="5dp"
             android:layout_marginRight="5dp"
             android:layout_toRightOf="@+id/control_forward"
+            android:background="?attr/selectableItemBackgroundBorderless"
             android:clickable="true"
-            android:contentDescription="@string/notification_action_shuffle"
             android:focusable="true"
-            app:icon="@drawable/ic_shuffle"
-            app:iconTint="?attr/colorAccent"
+            android:scaleType="fitXY"
+            android:src="@drawable/ic_shuffle"
+            app:tint="?attr/colorAccent"
             tools:ignore="ContentDescription" />
 
     </RelativeLayout>

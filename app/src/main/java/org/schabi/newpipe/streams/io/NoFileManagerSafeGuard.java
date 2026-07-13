@@ -6,6 +6,8 @@ import android.os.Build;
 import android.util.Log;
 
 import androidx.activity.result.ActivityResultLauncher;
+import androidx.appcompat.app.AlertDialog;
+
 import org.schabi.newpipe.R;
 
 /**
@@ -37,7 +39,7 @@ public final class NoFileManagerSafeGuard {
         }
 
 
-        new com.google.android.material.dialog.MaterialAlertDialogBuilder(context)
+        new AlertDialog.Builder(context)
                 .setTitle(R.string.no_app_to_open_intent)
                 .setMessage(message)
                 .setPositiveButton(R.string.ok, null)

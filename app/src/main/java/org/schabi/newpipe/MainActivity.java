@@ -20,6 +20,7 @@
 
 package org.schabi.newpipe;
 
+import android.app.AlertDialog;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
@@ -38,14 +39,16 @@ import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.webkit.WebView;
+import android.widget.AdapterView;
+import android.widget.ArrayAdapter;
 import android.widget.FrameLayout;
+import android.widget.Spinner;
 
 import androidx.activity.OnBackPressedCallback;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.ActionBar;
 import androidx.appcompat.app.ActionBarDrawerToggle;
-import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
@@ -81,7 +84,6 @@ import org.schabi.newpipe.player.helper.PlayerHolder;
 import org.schabi.newpipe.player.playqueue.PlayQueue;
 import org.schabi.newpipe.settings.UpdateSettingsFragment;
 import org.schabi.newpipe.settings.migration.MigrationManager;
-import org.schabi.newpipe.ui.MaterialActionSheetDialog;
 import org.schabi.newpipe.util.Constants;
 import org.schabi.newpipe.util.DeviceUtils;
 import org.schabi.newpipe.util.KioskTranslator;
@@ -118,7 +120,6 @@ public class MainActivity extends AppCompatActivity {
     private OnBackPressedCallback backPressedCallback;
 
     private boolean servicesShown = false;
-    private int dynamicColorsSignature;
 
     private BroadcastReceiver broadcastReceiver;
 
@@ -150,7 +151,6 @@ public class MainActivity extends AppCompatActivity {
         Localization.migrateAppLanguageSettingIfNecessary(getApplicationContext());
         ThemeHelper.setDayNightMode(this);
         ThemeHelper.setTheme(this, ServiceHelper.getSelectedServiceId(this));
-        dynamicColorsSignature = ThemeHelper.getDynamicColorsSignature(this);
 
         // Fixes text color turning black in dark/black mode:
         // https://github.com/TeamNewPipe/NewPipe/issues/12016
@@ -175,10 +175,8 @@ public class MainActivity extends AppCompatActivity {
             }
         };
         getOnBackPressedDispatcher().addCallback(this, backPressedCallback);
-        getSupportFragmentManager().addOnBackStackChangedListener(() -> {
-            updateBackPressedCallbackState();
-            updateDrawerNavigation();
-        });
+        getSupportFragmentManager().addOnBackStackChangedListener(
+                this::updateBackPressedCallbackState);
 
         mainBinding = ActivityMainBinding.inflate(getLayoutInflater());
         drawerLayoutBinding = mainBinding.drawerLayout;
@@ -236,10 +234,7 @@ public class MainActivity extends AppCompatActivity {
         }
 
         MigrationManager.showUserInfoIfPresent(this);
-        mainBinding.getRoot().post(() -> {
-            updateBackPressedCallbackState();
-            updateDrawerNavigation();
-        });
+        mainBinding.getRoot().post(this::updateBackPressedCallbackState);
     }
 
     @Override
@@ -504,40 +499,46 @@ public class MainActivity extends AppCompatActivity {
     private void enhancePeertubeMenu(final MenuItem menuItem) {
         final PeertubeInstance currentInstance = PeertubeHelper.getCurrentInstance();
         menuItem.setTitle(currentInstance.getName());
-        final var instanceSelector = InstanceSpinnerLayoutBinding.inflate(LayoutInflater.from(this))
+        final Spinner spinner = InstanceSpinnerLayoutBinding.inflate(LayoutInflater.from(this))
                 .getRoot();
         final List<PeertubeInstance> instances = PeertubeHelper.getInstanceList(this);
-        instanceSelector.setText(currentInstance.getName());
-        instanceSelector.setOnClickListener(v -> {
-            final List<MaterialActionSheetDialog.ActionItem> items = new ArrayList<>();
-            for (final PeertubeInstance instance : instances) {
-                final boolean isSelected =
-                        instance.getUrl().equals(PeertubeHelper.getCurrentInstance().getUrl());
-                items.add(MaterialActionSheetDialog.ActionItem.checked(
-                        instance.getUrl().hashCode(),
-                        instance.getName(),
-                        0,
-                        isSelected,
-                        () -> {
-                            if (isSelected) {
-                                return;
-                            }
-                            PeertubeHelper.selectInstance(
-                                    instance,
-                                    getApplicationContext());
-                            changeService(menuItem);
-                            mainBinding.getRoot().closeDrawers();
-                            new Handler(Looper.getMainLooper()).postDelayed(() -> {
-                                getSupportFragmentManager().popBackStack(
-                                        null,
-                                        FragmentManager.POP_BACK_STACK_INCLUSIVE);
-                                ActivityCompat.recreate(MainActivity.this);
-                            }, 300);
-                        }));
+        final List<String> items = new ArrayList<>();
+        int defaultSelect = 0;
+        for (final PeertubeInstance instance : instances) {
+            items.add(instance.getName());
+            if (instance.getUrl().equals(currentInstance.getUrl())) {
+                defaultSelect = items.size() - 1;
             }
-            MaterialActionSheetDialog.show(this, getString(R.string.choose_instance_prompt), items);
+        }
+        final ArrayAdapter<String> adapter = new ArrayAdapter<>(this,
+                R.layout.instance_spinner_item, items);
+        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        spinner.setAdapter(adapter);
+        spinner.setSelection(defaultSelect, false);
+        spinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+            @Override
+            public void onItemSelected(final AdapterView<?> parent, final View view,
+                                       final int position, final long id) {
+                final PeertubeInstance newInstance = instances.get(position);
+                if (newInstance.getUrl().equals(PeertubeHelper.getCurrentInstance().getUrl())) {
+                    return;
+                }
+                PeertubeHelper.selectInstance(newInstance, getApplicationContext());
+                changeService(menuItem);
+                mainBinding.getRoot().closeDrawers();
+                new Handler(Looper.getMainLooper()).postDelayed(() -> {
+                    getSupportFragmentManager().popBackStack(null,
+                            FragmentManager.POP_BACK_STACK_INCLUSIVE);
+                    ActivityCompat.recreate(MainActivity.this);
+                }, 300);
+            }
+
+            @Override
+            public void onNothingSelected(final AdapterView<?> parent) {
+
+            }
         });
-        menuItem.setActionView(instanceSelector);
+        menuItem.setActionView(spinner);
     }
 
     @Override
@@ -556,13 +557,6 @@ public class MainActivity extends AppCompatActivity {
         // Change the date format to match the selected language on resume
         Localization.initPrettyTime(Localization.resolvePrettyTime());
         super.onResume();
-
-        final int currentDynamicColorsSignature = ThemeHelper.getDynamicColorsSignature(this);
-        if (dynamicColorsSignature != currentDynamicColorsSignature) {
-            dynamicColorsSignature = currentDynamicColorsSignature;
-            ActivityCompat.recreate(this);
-            return;
-        }
 
         // Close drawer on return, and don't show animation,
         // so it looks like the drawer isn't open when the user returns to MainActivity
@@ -603,7 +597,6 @@ public class MainActivity extends AppCompatActivity {
                 getString(R.string.enable_watch_history_key), true);
         drawerLayoutBinding.navigation.getMenu().findItem(ITEM_ID_HISTORY)
                 .setVisible(isHistoryEnabled);
-        updateDrawerNavigation();
     }
 
     @Override
@@ -863,13 +856,12 @@ public class MainActivity extends AppCompatActivity {
             getSupportActionBar().setDisplayHomeAsUpEnabled(false);
             if (toggle != null) {
                 toggle.syncState();
-                toolbarLayoutBinding.toolbar.setNavigationOnClickListener(v ->
-                        mainBinding.getRoot().openDrawer(drawerLayoutBinding.navigation));
-                mainBinding.getRoot().setDrawerLockMode(DrawerLayout.LOCK_MODE_UNLOCKED);
+                toolbarLayoutBinding.toolbar.setNavigationOnClickListener(v -> mainBinding.getRoot()
+                        .open());
+                mainBinding.getRoot().setDrawerLockMode(DrawerLayout.LOCK_MODE_UNDEFINED);
             }
         } else {
             mainBinding.getRoot().setDrawerLockMode(DrawerLayout.LOCK_MODE_LOCKED_CLOSED);
-            mainBinding.getRoot().closeDrawer(drawerLayoutBinding.navigation, false);
             getSupportActionBar().setDisplayHomeAsUpEnabled(true);
             toolbarLayoutBinding.toolbar.setNavigationOnClickListener(v -> onHomeButtonPressed());
         }
@@ -1065,8 +1057,7 @@ public class MainActivity extends AppCompatActivity {
             final String detailsUrl = getKeepAndroidOpenDetailsUrl();
             final var solutionUrl = "https://github.com/woheller69/FreeDroidWarn#solutions";
 
-            final var dialog =
-                    new com.google.android.material.dialog.MaterialAlertDialogBuilder(this)
+            final var dialog = new AlertDialog.Builder(this)
                     .setTitle("Keep Android Open")
                     .setCancelable(false)
                     .setMessage(R.string.kao_dialog_warning)
@@ -1113,6 +1104,7 @@ public class MainActivity extends AppCompatActivity {
         if (prefs.getBoolean(shownKey, false)) {
             return; // dialog was already shown in the past, no need to show it again
         }
+
         final var dialog = new AlertDialog.Builder(this)
                 .setTitle(R.string.api23_requirement_dialog_title)
                 .setCancelable(false)

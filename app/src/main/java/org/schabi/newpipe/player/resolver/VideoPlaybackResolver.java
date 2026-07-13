@@ -270,20 +270,16 @@ public class VideoPlaybackResolver implements PlaybackResolver {
                     || videoOnly != videoStream.isVideoOnly()) {
                 return false;
             }
-
             if (itag > 0 && videoStream.getItag() > 0 && itag != videoStream.getItag()) {
                 return false;
             }
-
             if (!streamId.trim().isEmpty() && !streamId.equals(videoStream.getId())) {
                 return false;
             }
-
             if (bitrate > 0 && videoStream.getBitrate() > 0
                     && bitrate != videoStream.getBitrate()) {
                 return false;
             }
-
             if (fps > 0 && videoStream.getFps() > 0 && fps != videoStream.getFps()) {
                 return false;
             }

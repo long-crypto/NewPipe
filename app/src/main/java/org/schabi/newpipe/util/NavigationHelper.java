@@ -15,6 +15,7 @@ import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
@@ -323,7 +324,7 @@ public final class NavigationHelper {
                                                      @NonNull final Intent intent) {
         if (!ShareUtils.tryOpenIntentInApp(context, intent)) {
             if (context instanceof Activity) {
-                new com.google.android.material.dialog.MaterialAlertDialogBuilder(context)
+                new AlertDialog.Builder(context)
                         .setMessage(R.string.no_player_found)
                         .setPositiveButton(R.string.install, (dialog, which) ->
                                 ShareUtils.installApp(context,

@@ -10,6 +10,7 @@ import static com.google.android.material.tabs.TabLayout.INDICATOR_GRAVITY_TOP;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.content.res.ColorStateList;
+import android.graphics.Color;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -18,7 +19,6 @@ import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.ImageView;
 import android.widget.RelativeLayout;
 
 import androidx.annotation.ColorInt;
@@ -204,43 +204,12 @@ public class MainFragment extends BaseFragment implements TabLayout.OnTabSelecte
     }
 
     private void updateTabsIconAndDescription() {
-        final LayoutInflater inflater = LayoutInflater.from(requireContext());
         for (int i = 0; i < tabsList.size(); i++) {
             final TabLayout.Tab tabToSet = binding.mainTabLayout.getTabAt(i);
             if (tabToSet != null) {
                 final Tab tab = tabsList.get(i);
-                final View customView = inflater.inflate(
-                        R.layout.view_main_tab, binding.mainTabLayout, false);
-                ((ImageView) customView.findViewById(R.id.tab_icon))
-                        .setImageResource(tab.getTabIconRes(requireContext()));
-                customView.setSelected(i == binding.mainTabLayout.getSelectedTabPosition());
-                tabToSet.setCustomView(customView);
+                tabToSet.setIcon(tab.getTabIconRes(requireContext()));
                 tabToSet.setContentDescription(tab.getTabName(requireContext()));
-            }
-        }
-        normalizeTabItemBounds(binding.mainTabLayout);
-        syncMainTabSelectionState();
-    }
-
-    private void normalizeTabItemBounds(@NonNull final TabLayout tabLayout) {
-        final View strip = tabLayout.getChildAt(0);
-        if (!(strip instanceof ViewGroup)) {
-            return;
-        }
-        final ViewGroup stripGroup = (ViewGroup) strip;
-        for (int i = 0; i < stripGroup.getChildCount(); i++) {
-            final View tabView = stripGroup.getChildAt(i);
-            tabView.setPadding(0, 0, 0, 0);
-            tabView.setMinimumHeight(0);
-        }
-    }
-
-    private void syncMainTabSelectionState() {
-        final int selectedPosition = binding.mainTabLayout.getSelectedTabPosition();
-        for (int i = 0; i < tabsList.size(); i++) {
-            final TabLayout.Tab tab = binding.mainTabLayout.getTabAt(i);
-            if (tab != null && tab.getCustomView() != null) {
-                tab.getCustomView().setSelected(i == selectedPosition);
             }
         }
     }
@@ -290,15 +259,14 @@ public class MainFragment extends BaseFragment implements TabLayout.OnTabSelecte
         tabLayout.setLayoutParams(tabParams);
         viewPager.setLayoutParams(pagerParams);
 
-        // Keep the tabs aligned with the same surface palette used by the main content cards.
-        tabLayout.setBackgroundColor(ThemeHelper.resolveColorFromAttr(
-                requireContext(),
-                com.google.android.material.R.attr.colorSurface));
+        // change the background and icon color of the tab layout:
+        // service-colored at the top, app-background-colored at the bottom
+        tabLayout.setBackgroundColor(ThemeHelper.resolveColorFromAttr(requireContext(),
+                bottom ? android.R.attr.windowBackground : R.attr.colorPrimary));
 
-        @ColorInt final int iconColor = ThemeHelper.resolveColorFromAttr(
-                requireContext(),
-                com.google.android.material.R.attr.colorOnSurface
-        );
+        @ColorInt final int iconColor = bottom
+                ? ThemeHelper.resolveColorFromAttr(requireContext(), android.R.attr.colorAccent)
+                : Color.WHITE;
         tabLayout.setTabRippleColor(ColorStateList.valueOf(iconColor).withAlpha(32));
         tabLayout.setTabIconTint(ColorStateList.valueOf(iconColor));
         tabLayout.setSelectedTabIndicatorColor(iconColor);
@@ -310,13 +278,10 @@ public class MainFragment extends BaseFragment implements TabLayout.OnTabSelecte
             Log.d(TAG, "onTabSelected() called with: selectedTab = [" + selectedTab + "]");
         }
         updateTitleForTab(selectedTab.getPosition());
-        syncMainTabSelectionState();
     }
 
     @Override
-    public void onTabUnselected(final TabLayout.Tab tab) {
-        syncMainTabSelectionState();
-    }
+    public void onTabUnselected(final TabLayout.Tab tab) { }
 
     @Override
     public void onTabReselected(final TabLayout.Tab tab) {
@@ -324,7 +289,6 @@ public class MainFragment extends BaseFragment implements TabLayout.OnTabSelecte
             Log.d(TAG, "onTabReselected() called with: tab = [" + tab + "]");
         }
         updateTitleForTab(tab.getPosition());
-        syncMainTabSelectionState();
     }
 
     public static final class SelectedTabsPagerAdapter

@@ -28,7 +28,7 @@ public abstract class BaseAccountSettingsFragment extends BasePreferenceFragment
 
     @Override
     public void onCreatePreferences(final Bundle savedInstanceState, final String rootKey) {
-        inflatePreferences(getPreferenceResource());
+        addPreferencesFromResource(getPreferenceResource());
         initializePreferences();
         setupClickListeners();
         refreshPreferenceState();

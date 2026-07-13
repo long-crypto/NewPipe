@@ -12,7 +12,7 @@ import android.provider.Settings;
 import android.text.Html;
 import android.widget.Toast;
 
-import androidx.annotation.RequiresApi;
+import androidx.appcompat.app.AlertDialog;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 
@@ -141,7 +141,7 @@ public final class PermissionHelper {
                                 appNameItalic,
                                 permissionNameItalic
                         );
-                new com.google.android.material.dialog.MaterialAlertDialogBuilder(context)
+                new AlertDialog.Builder(context)
                         .setTitle(title)
                         .setMessage(Html.fromHtml(message, Html.FROM_HTML_MODE_COMPACT))
                         .setPositiveButton("OK", (dialog, which) -> {

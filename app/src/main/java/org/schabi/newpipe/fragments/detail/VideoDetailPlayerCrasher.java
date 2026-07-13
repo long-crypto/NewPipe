@@ -97,9 +97,7 @@ public final class VideoDetailPlayerCrasher {
         final SingleChoiceDialogViewBinding binding =
                 SingleChoiceDialogViewBinding.inflate(inflater);
 
-        final AlertDialog alertDialog =
-                new com.google.android.material.dialog.MaterialAlertDialogBuilder(
-                        themeWrapperContext)
+        final AlertDialog alertDialog = new AlertDialog.Builder(themeWrapperContext)
                 .setTitle("Choose an exception")
                 .setView(binding.getRoot())
                 .setCancelable(true)

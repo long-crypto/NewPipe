@@ -19,6 +19,7 @@ import android.view.LayoutInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.AdapterView;
 import android.widget.RadioGroup;
 import android.widget.SeekBar;
 import android.widget.Toast;
@@ -88,7 +89,7 @@ import us.shandian.giga.service.DownloadManagerService.DownloadManagerBinder;
 import us.shandian.giga.service.MissionState;
 
 public class DownloadDialog extends DialogFragment
-        implements RadioGroup.OnCheckedChangeListener {
+        implements RadioGroup.OnCheckedChangeListener, AdapterView.OnItemSelectedListener {
     private static final String TAG = "DialogFragment";
     private static final boolean DEBUG = MainActivity.DEBUG;
 
@@ -214,8 +215,8 @@ public class DownloadDialog extends DialogFragment
         setStyle(STYLE_NO_TITLE, ThemeHelper.getDialogTheme(context));
         Bridge.restoreInstanceState(this, savedInstanceState);
 
-        this.audioTrackAdapter = new AudioTrackAdapter(wrappedAudioTracks, context);
-        this.subtitleStreamsAdapter = new StreamItemAdapter<>(wrappedSubtitleStreams, context);
+        this.audioTrackAdapter = new AudioTrackAdapter(wrappedAudioTracks);
+        this.subtitleStreamsAdapter = new StreamItemAdapter<>(wrappedSubtitleStreams);
         updateSecondaryStreams();
 
         final Intent intent = new Intent(context, DownloadManagerService.class);
@@ -272,9 +273,8 @@ public class DownloadDialog extends DialogFragment
             }
         }
 
-        this.videoStreamsAdapter = new StreamItemAdapter<>(wrappedVideoStreams, secondaryStreams,
-                context);
-        this.audioStreamsAdapter = new StreamItemAdapter<>(audioStreams, context);
+        this.videoStreamsAdapter = new StreamItemAdapter<>(wrappedVideoStreams, secondaryStreams);
+        this.audioStreamsAdapter = new StreamItemAdapter<>(audioStreams);
     }
 
     @Override
@@ -305,13 +305,9 @@ public class DownloadDialog extends DialogFragment
 
         selectedSubtitleIndex = getSubtitleIndexBy(subtitleStreamsAdapter.getAll());
 
-        dialogBinding.qualitySpinner.setOnItemClickListener((parent, dropdownView, position, id) ->
-                onQualitySelected(position));
-        dialogBinding.audioStreamSpinner.setOnItemClickListener(
-                (parent, dropdownView, position, id) -> selectedAudioIndex = position);
-        dialogBinding.audioTrackSpinner.setOnItemClickListener((parent, dropdownView, position,
-                                                                id) ->
-                onAudioTrackSelected(position));
+        dialogBinding.qualitySpinner.setOnItemSelectedListener(this);
+        dialogBinding.audioStreamSpinner.setOnItemSelectedListener(this);
+        dialogBinding.audioTrackSpinner.setOnItemSelectedListener(this);
         dialogBinding.videoAudioGroup.setOnCheckedChangeListener(this);
 
         initToolbar(dialogBinding.toolbarLayout.toolbar);
@@ -420,9 +416,7 @@ public class DownloadDialog extends DialogFragment
         }
 
         dialogBinding.audioTrackSpinner.setAdapter(audioTrackAdapter);
-        dialogBinding.audioTrackSpinner.setText(
-                audioTrackAdapter.getDisplayLabel(selectedAudioTrackIndex),
-                false);
+        dialogBinding.audioTrackSpinner.setSelection(selectedAudioTrackIndex);
     }
 
     private void setupAudioSpinner() {
@@ -430,17 +424,14 @@ public class DownloadDialog extends DialogFragment
             return;
         }
 
-        dialogBinding.qualitySpinnerContainer.setVisibility(View.GONE);
+        dialogBinding.qualitySpinner.setVisibility(View.GONE);
         setRadioButtonsState(true);
         dialogBinding.audioStreamSpinner.setAdapter(audioStreamsAdapter);
-        dialogBinding.audioStreamSpinner.setText(
-                audioStreamsAdapter.getDisplayLabel(selectedAudioIndex),
-                false);
-        dialogBinding.audioStreamSpinnerContainer.setVisibility(View.VISIBLE);
-        dialogBinding.audioTrackSpinnerContainer.setVisibility(
+        dialogBinding.audioStreamSpinner.setSelection(selectedAudioIndex);
+        dialogBinding.audioStreamSpinner.setVisibility(View.VISIBLE);
+        dialogBinding.audioTrackSpinner.setVisibility(
                 wrappedAudioTracks.size() > 1 ? View.VISIBLE : View.GONE);
         dialogBinding.audioTrackPresentInVideoText.setVisibility(View.GONE);
-        updateSelectedFileName();
     }
 
     private void setupVideoSpinner() {
@@ -449,20 +440,17 @@ public class DownloadDialog extends DialogFragment
         }
 
         dialogBinding.qualitySpinner.setAdapter(videoStreamsAdapter);
-        dialogBinding.qualitySpinner.setText(
-                videoStreamsAdapter.getDisplayLabel(selectedVideoIndex),
-                false);
-        dialogBinding.qualitySpinnerContainer.setVisibility(View.VISIBLE);
+        dialogBinding.qualitySpinner.setSelection(selectedVideoIndex);
+        dialogBinding.qualitySpinner.setVisibility(View.VISIBLE);
         setRadioButtonsState(true);
-        dialogBinding.audioStreamSpinnerContainer.setVisibility(View.GONE);
+        dialogBinding.audioStreamSpinner.setVisibility(View.GONE);
         onVideoStreamSelected();
-        updateSelectedFileName();
     }
 
     private void onVideoStreamSelected() {
         final boolean isVideoOnly = videoStreamsAdapter.getItem(selectedVideoIndex).isVideoOnly();
 
-        dialogBinding.audioTrackSpinnerContainer.setVisibility(
+        dialogBinding.audioTrackSpinner.setVisibility(
                 isVideoOnly && wrappedAudioTracks.size() > 1 ? View.VISIBLE : View.GONE);
         dialogBinding.audioTrackPresentInVideoText.setVisibility(
                 !isVideoOnly && wrappedAudioTracks.size() > 1 ? View.VISIBLE : View.GONE);
@@ -474,15 +462,12 @@ public class DownloadDialog extends DialogFragment
         }
 
         dialogBinding.qualitySpinner.setAdapter(subtitleStreamsAdapter);
-        dialogBinding.qualitySpinner.setText(
-                subtitleStreamsAdapter.getDisplayLabel(selectedSubtitleIndex),
-                false);
-        dialogBinding.qualitySpinnerContainer.setVisibility(View.VISIBLE);
+        dialogBinding.qualitySpinner.setSelection(selectedSubtitleIndex);
+        dialogBinding.qualitySpinner.setVisibility(View.VISIBLE);
         setRadioButtonsState(true);
-        dialogBinding.audioStreamSpinnerContainer.setVisibility(View.GONE);
-        dialogBinding.audioTrackSpinnerContainer.setVisibility(View.GONE);
+        dialogBinding.audioStreamSpinner.setVisibility(View.GONE);
+        dialogBinding.audioTrackSpinner.setVisibility(View.GONE);
         dialogBinding.audioTrackPresentInVideoText.setVisibility(View.GONE);
-        updateSelectedFileName();
     }
 
 
@@ -585,35 +570,41 @@ public class DownloadDialog extends DialogFragment
         dialogBinding.threads.setEnabled(flag);
     }
 
-    private void onQualitySelected(final int position) {
+    @Override
+    public void onItemSelected(final AdapterView<?> parent,
+                               final View view,
+                               final int position,
+                               final long id) {
         if (DEBUG) {
-            Log.d(TAG, "onQualitySelected() called with: position = [" + position + "]");
+            Log.d(TAG, "onItemSelected() called with: "
+                    + "parent = [" + parent + "], view = [" + view + "], "
+                    + "position = [" + position + "], id = [" + id + "]");
         }
 
-        final int checkedRadioButtonId = dialogBinding.videoAudioGroup.getCheckedRadioButtonId();
-        if (checkedRadioButtonId == R.id.video_button) {
-            selectedVideoIndex = position;
-            onVideoStreamSelected();
-        } else if (checkedRadioButtonId == R.id.subtitle_button) {
-            selectedSubtitleIndex = position;
+        final int parentId = parent.getId();
+        if (parentId == R.id.quality_spinner) {
+            final int checkedRadioButtonId = dialogBinding.videoAudioGroup
+                    .getCheckedRadioButtonId();
+            if (checkedRadioButtonId == R.id.video_button) {
+                selectedVideoIndex = position;
+                onVideoStreamSelected();
+            } else if (checkedRadioButtonId == R.id.subtitle_button) {
+                selectedSubtitleIndex = position;
+            }
+            onItemSelectedSetFileName();
+        } else if (parentId == R.id.audio_track_spinner) {
+            final boolean trackChanged = selectedAudioTrackIndex != position;
+            selectedAudioTrackIndex = position;
+            if (trackChanged) {
+                updateSecondaryStreams();
+                fetchStreamsSize();
+            }
+        } else if (parentId == R.id.audio_stream_spinner) {
+            selectedAudioIndex = position;
         }
-        updateSelectedFileName();
     }
 
-    private void onAudioTrackSelected(final int position) {
-        if (DEBUG) {
-            Log.d(TAG, "onAudioTrackSelected() called with: position = [" + position + "]");
-        }
-
-        final boolean trackChanged = selectedAudioTrackIndex != position;
-        selectedAudioTrackIndex = position;
-        if (trackChanged) {
-            updateSecondaryStreams();
-            fetchStreamsSize();
-        }
-    }
-
-    private void updateSelectedFileName() {
+    private void onItemSelectedSetFileName() {
         final String fileName = FilenameUtils.createFilename(getContext(), currentInfo.getName());
         final String prevFileName = Optional.ofNullable(dialogBinding.fileName.getText())
                 .map(Object::toString)
@@ -640,6 +631,10 @@ public class DownloadDialog extends DialogFragment
                         R.string.caption_file_name, fileName, setSubtitleLanguageCode));
             }
         }
+    }
+
+    @Override
+    public void onNothingSelected(final AdapterView<?> parent) {
     }
 
 
@@ -742,7 +737,7 @@ public class DownloadDialog extends DialogFragment
     }
 
     private void showFailedDialog(@StringRes final int msg) {
-        new com.google.android.material.dialog.MaterialAlertDialogBuilder(context)
+        new AlertDialog.Builder(context)
                 .setTitle(R.string.general_error)
                 .setMessage(msg)
                 .setNegativeButton(getString(R.string.ok), null)
@@ -952,8 +947,7 @@ public class DownloadDialog extends DialogFragment
                 return; // unreachable
         }
 
-        final AlertDialog.Builder askDialog =
-                new com.google.android.material.dialog.MaterialAlertDialogBuilder(context)
+        final AlertDialog.Builder askDialog = new AlertDialog.Builder(context)
                 .setTitle(R.string.download_dialog_title)
                 .setMessage(msgBody)
                 .setNegativeButton(R.string.cancel, null);

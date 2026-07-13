@@ -76,8 +76,7 @@ public final class CommentRepliesFragment
 
     @Override
     protected void initViews(final View rootView, final Bundle savedInstanceState) {
-        relatedStreamUrl = PlayerHolder.getInstance()
-                .getCurrentUrl(commentsInfoItem.getServiceId());
+        relatedStreamUrl = PlayerHolder.getInstance().getCurrentUrl(commentsInfoItem.getServiceId());
         infoListAdapter.setRelatedStreamUrl(relatedStreamUrl);
         super.initViews(rootView, savedInstanceState);
     }

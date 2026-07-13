@@ -8,6 +8,7 @@ import android.content.Intent;
 import android.net.Uri;
 
 import androidx.annotation.NonNull;
+import androidx.appcompat.app.AlertDialog;
 import androidx.preference.PreferenceManager;
 
 import org.schabi.newpipe.R;
@@ -60,7 +61,7 @@ public final class KoreUtils {
                 .setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
 
         if (!tryOpenIntentInApp(context, intent)) {
-            new com.google.android.material.dialog.MaterialAlertDialogBuilder(context)
+            new AlertDialog.Builder(context)
                     .setMessage(R.string.kore_not_found)
                     .setPositiveButton(R.string.install, (dialog, which) ->
                             installKore(context))

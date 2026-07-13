@@ -1,6 +1,7 @@
 package org.schabi.newpipe.local.subscription
 
 import android.content.Context
+import android.content.DialogInterface
 import android.os.Bundle
 import android.os.Parcelable
 import android.view.LayoutInflater
@@ -13,6 +14,7 @@ import android.view.ViewGroup
 import android.webkit.MimeTypeMap
 import android.widget.Toast
 import androidx.annotation.StringRes
+import androidx.appcompat.app.AlertDialog
 import androidx.lifecycle.ViewModelProvider
 import androidx.recyclerview.widget.GridLayoutManager
 import com.evernote.android.state.State
@@ -23,6 +25,7 @@ import com.xwray.groupie.viewbinding.GroupieViewHolder
 import io.reactivex.rxjava3.disposables.CompositeDisposable
 import org.schabi.newpipe.R
 import org.schabi.newpipe.database.feed.model.FeedGroupEntity.Companion.GROUP_ALL_ID
+import org.schabi.newpipe.databinding.DialogTitleBinding
 import org.schabi.newpipe.databinding.FeedItemCarouselBinding
 import org.schabi.newpipe.databinding.FragmentSubscriptionBinding
 import org.schabi.newpipe.error.ErrorInfo
@@ -44,8 +47,6 @@ import org.schabi.newpipe.local.subscription.item.FeedImportExportItem
 import org.schabi.newpipe.local.subscription.item.GroupsHeader
 import org.schabi.newpipe.local.subscription.item.Header
 import org.schabi.newpipe.local.subscription.item.ImportSubscriptionsHintPlaceholderItem
-import org.schabi.newpipe.settings.BackupRestoreSettingsFragment
-import org.schabi.newpipe.ui.MaterialActionSheetDialog
 import org.schabi.newpipe.util.NavigationHelper
 import org.schabi.newpipe.util.OnClickGesture
 import org.schabi.newpipe.util.ServiceHelper
@@ -180,17 +181,6 @@ class SubscriptionFragment : BaseStateFragment<SubscriptionState>() {
         NavigationHelper.openSubscriptionsImportFragment(fragmentManager, serviceId)
     }
 
-    private fun onImportPreviousSelected() {
-        importExportHelper.onImportPreviousSelected()
-    }
-
-    private fun onExportSelected() {
-        importExportHelper.onExportSelected()
-    }
-
-    private fun onBackupSelected() {
-        NavigationHelper.openSettings(requireContext(), BackupRestoreSettingsFragment::class.java)
-    }
     private fun openReorderDialog() {
         FeedGroupReorderDialog().show(parentFragmentManager, null)
     }
@@ -303,38 +293,36 @@ class SubscriptionFragment : BaseStateFragment<SubscriptionState>() {
     }
 
     private fun showLongTapDialog(selectedItem: ChannelInfoItem) {
-        MaterialActionSheetDialog.show(
-            requireContext(),
-            selectedItem.name,
-            listOf(
-                MaterialActionSheetDialog.ActionItem.create(
-                    0,
-                    getString(R.string.share),
-                    R.drawable.ic_share
-                ) {
-                    ShareUtils.shareText(
-                        requireContext(),
-                        selectedItem.name,
-                        selectedItem.url,
-                        selectedItem.thumbnails
-                    )
-                },
-                MaterialActionSheetDialog.ActionItem.create(
-                    1,
-                    getString(R.string.open_in_browser),
-                    R.drawable.ic_language
-                ) {
-                    ShareUtils.openUrlInBrowser(requireContext(), selectedItem.url)
-                },
-                MaterialActionSheetDialog.ActionItem.create(
-                    2,
-                    getString(R.string.unsubscribe),
-                    R.drawable.ic_delete
-                ) {
-                    deleteChannel(selectedItem)
-                }
-            )
+        val commands = arrayOf(
+            getString(R.string.share),
+            getString(R.string.open_in_browser),
+            getString(R.string.unsubscribe)
         )
+
+        val actions = DialogInterface.OnClickListener { _, i ->
+            when (i) {
+                0 -> ShareUtils.shareText(
+                    requireContext(),
+                    selectedItem.name,
+                    selectedItem.url,
+                    selectedItem.thumbnails
+                )
+
+                1 -> ShareUtils.openUrlInBrowser(requireContext(), selectedItem.url)
+
+                2 -> deleteChannel(selectedItem)
+            }
+        }
+
+        val dialogTitleBinding = DialogTitleBinding.inflate(LayoutInflater.from(requireContext()))
+        dialogTitleBinding.root.isSelected = true
+        dialogTitleBinding.itemTitleView.text = selectedItem.name
+        dialogTitleBinding.itemAdditionalDetails.visibility = View.GONE
+
+        AlertDialog.Builder(requireContext())
+            .setCustomTitle(dialogTitleBinding.root)
+            .setItems(commands, actions)
+            .show()
     }
 
     private fun deleteChannel(selectedItem: ChannelInfoItem) {

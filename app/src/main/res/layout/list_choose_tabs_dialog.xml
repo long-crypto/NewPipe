@@ -6,7 +6,7 @@
     android:minHeight="?listPreferredItemHeightSmall"
     android:orientation="horizontal">
 
-    <ImageView
+    <androidx.appcompat.widget.AppCompatImageView
         android:id="@+id/tabIcon"
         android:layout_width="24dp"
         android:layout_height="24dp"

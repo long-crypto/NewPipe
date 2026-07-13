@@ -5,6 +5,7 @@ import android.os.Bundle;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
+import androidx.appcompat.app.AlertDialog;
 import androidx.preference.Preference;
 
 import org.schabi.newpipe.DownloaderImpl;
@@ -123,7 +124,7 @@ public class HistorySettingsFragment extends BasePreferenceFragment {
     public static void openDeleteWatchHistoryDialog(@NonNull final Context context,
                                                     final HistoryRecordManager recordManager,
                                                     final CompositeDisposable disposables) {
-        new com.google.android.material.dialog.MaterialAlertDialogBuilder(context)
+        new AlertDialog.Builder(context)
                 .setTitle(R.string.delete_view_history_alert)
                 .setNegativeButton(R.string.cancel, ((dialog, which) -> dialog.dismiss()))
                 .setPositiveButton(R.string.delete, ((dialog, which) -> {
@@ -137,7 +138,7 @@ public class HistorySettingsFragment extends BasePreferenceFragment {
     public static void openDeletePlaybackStatesDialog(@NonNull final Context context,
                                                       final HistoryRecordManager recordManager,
                                                       final CompositeDisposable disposables) {
-        new com.google.android.material.dialog.MaterialAlertDialogBuilder(context)
+        new AlertDialog.Builder(context)
                 .setTitle(R.string.delete_playback_states_alert)
                 .setNegativeButton(R.string.cancel, ((dialog, which) -> dialog.dismiss()))
                 .setPositiveButton(R.string.delete, ((dialog, which) ->
@@ -148,7 +149,7 @@ public class HistorySettingsFragment extends BasePreferenceFragment {
     public static void openDeleteSearchHistoryDialog(@NonNull final Context context,
                                                      final HistoryRecordManager recordManager,
                                                      final CompositeDisposable disposables) {
-        new com.google.android.material.dialog.MaterialAlertDialogBuilder(context)
+        new AlertDialog.Builder(context)
                 .setTitle(R.string.delete_search_history_alert)
                 .setNegativeButton(R.string.cancel, ((dialog, which) -> dialog.dismiss()))
                 .setPositiveButton(R.string.delete, ((dialog, which) ->

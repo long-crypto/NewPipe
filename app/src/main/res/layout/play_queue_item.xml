@@ -5,7 +5,7 @@
     android:id="@+id/itemRoot"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:background="@drawable/bg_md3_selected_item"
+    android:background="?attr/selector"
     android:clickable="true"
     android:focusable="true"
     android:foreground="?attr/selectableItemBackground">
@@ -82,7 +82,7 @@
         app:layout_constraintTop_toBottomOf="@+id/itemVideoTitleView"
         tools:text="Uploader uploader uploader uploader uploader · Youtube" />
 
-    <ImageView
+    <androidx.appcompat.widget.AppCompatImageView
         android:id="@+id/itemHandle"
         android:layout_width="wrap_content"
         android:layout_height="0dp"

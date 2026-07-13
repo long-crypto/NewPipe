@@ -46,9 +46,7 @@ import android.view.ViewTreeObserver;
 import android.view.WindowManager;
 import android.view.animation.DecelerateInterpolator;
 import android.widget.FrameLayout;
-import android.widget.ImageView;
 import android.widget.RelativeLayout;
-import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.activity.OnBackPressedCallback;
@@ -56,6 +54,7 @@ import androidx.annotation.AttrRes;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.StringRes;
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.content.res.AppCompatResources;
 import androidx.appcompat.widget.Toolbar;
 import androidx.coordinatorlayout.widget.CoordinatorLayout;
@@ -125,7 +124,6 @@ import org.schabi.newpipe.util.PermissionHelper;
 import org.schabi.newpipe.util.PlayButtonHelper;
 import org.schabi.newpipe.util.StreamTypeUtil;
 import org.schabi.newpipe.util.ThemeHelper;
-import org.schabi.newpipe.ui.MaterialActionSheetDialog;
 import org.schabi.newpipe.util.external_communication.KoreUtils;
 import org.schabi.newpipe.util.external_communication.ShareUtils;
 import org.schabi.newpipe.util.image.CoilHelper;
@@ -679,22 +677,6 @@ public final class VideoDetailFragment
         pageAdapter = new TabAdapter(getChildFragmentManager());
         binding.viewPager.setAdapter(pageAdapter);
         binding.tabLayout.setupWithViewPager(binding.viewPager);
-        binding.tabLayout.addOnTabSelectedListener(new TabLayout.OnTabSelectedListener() {
-            @Override
-            public void onTabSelected(@NonNull final TabLayout.Tab tab) {
-                syncDetailTabSelectionState();
-            }
-
-            @Override
-            public void onTabUnselected(@NonNull final TabLayout.Tab tab) {
-                syncDetailTabSelectionState();
-            }
-
-            @Override
-            public void onTabReselected(@NonNull final TabLayout.Tab tab) {
-                syncDetailTabSelectionState();
-            }
-        });
         binding.viewPager.addOnPageChangeListener(new ViewPager.SimpleOnPageChangeListener() {
             @Override
             public void onPageSelected(final int position) {
@@ -1070,42 +1052,11 @@ public final class VideoDetailFragment
      * {@link #tabContentDescriptions}, which are all set in {@link #initTabs()}.
      */
     private void updateTabIconsAndContentDescriptions() {
-        final LayoutInflater inflater = LayoutInflater.from(requireContext());
         for (int i = 0; i < tabIcons.size(); ++i) {
             final TabLayout.Tab tab = binding.tabLayout.getTabAt(i);
             if (tab != null) {
-                final View customView = inflater.inflate(
-                        R.layout.view_detail_tab, binding.tabLayout, false);
-                ((ImageView) customView.findViewById(R.id.tab_icon)).setImageResource(tabIcons.get(i));
-                ((TextView) customView.findViewById(R.id.tab_text)).setText(pageAdapter.getItemTitle(i));
-                customView.setSelected(i == binding.tabLayout.getSelectedTabPosition());
-                tab.setCustomView(customView);
+                tab.setIcon(tabIcons.get(i));
                 tab.setContentDescription(tabContentDescriptions.get(i));
-            }
-        }
-        normalizeTabItemBounds(binding.tabLayout);
-        syncDetailTabSelectionState();
-    }
-
-    private void normalizeTabItemBounds(@NonNull final TabLayout tabLayout) {
-        final View strip = tabLayout.getChildAt(0);
-        if (!(strip instanceof ViewGroup)) {
-            return;
-        }
-        final ViewGroup stripGroup = (ViewGroup) strip;
-        for (int i = 0; i < stripGroup.getChildCount(); i++) {
-            final View tabView = stripGroup.getChildAt(i);
-            tabView.setPadding(0, 0, 0, 0);
-            tabView.setMinimumHeight(0);
-        }
-    }
-
-    private void syncDetailTabSelectionState() {
-        final int selectedPosition = binding.tabLayout.getSelectedTabPosition();
-        for (int i = 0; i < tabIcons.size(); ++i) {
-            final TabLayout.Tab tab = binding.tabLayout.getTabAt(i);
-            if (tab != null && tab.getCustomView() != null) {
-                tab.getCustomView().setSelected(i == selectedPosition);
             }
         }
     }
@@ -2395,7 +2346,7 @@ public final class VideoDetailFragment
     }
 
     private void showClearingQueueConfirmation(final Runnable onAllow) {
-        new com.google.android.material.dialog.MaterialAlertDialogBuilder(activity)
+        new AlertDialog.Builder(activity)
                 .setTitle(R.string.clear_queue_confirmation_description)
                 .setNegativeButton(R.string.cancel, null)
                 .setPositiveButton(R.string.ok, (dialog, which) -> {
@@ -2410,6 +2361,11 @@ public final class VideoDetailFragment
             return;
         }
 
+        final AlertDialog.Builder builder = new AlertDialog.Builder(activity);
+        builder.setTitle(R.string.select_quality_external_players);
+        builder.setNeutralButton(R.string.open_in_browser, (dialog, i) ->
+                ShareUtils.openUrlInBrowser(requireActivity(), url));
+
         final List<VideoStream> videoStreamsForExternalPlayers =
                 ListHelper.getSortedStreamVideosList(
                         activity,
@@ -2420,39 +2376,31 @@ public final class VideoDetailFragment
                 );
 
         if (videoStreamsForExternalPlayers.isEmpty()) {
-            new com.google.android.material.dialog.MaterialAlertDialogBuilder(activity)
-                    .setTitle(R.string.select_quality_external_players)
-                    .setMessage(R.string.no_video_streams_available_for_external_players)
-                    .setPositiveButton(R.string.open_in_browser, (dialog, i) ->
-                            ShareUtils.openUrlInBrowser(requireActivity(), url))
-                    .setNegativeButton(R.string.cancel, null)
-                    .show();
+            builder.setMessage(R.string.no_video_streams_available_for_external_players);
+            builder.setPositiveButton(R.string.ok, null);
+
         } else {
             final int selectedVideoStreamIndexForExternalPlayers =
                     ListHelper.getDefaultResolutionIndex(activity, videoStreamsForExternalPlayers);
-            final List<MaterialActionSheetDialog.ActionItem> items = new ArrayList<>();
-            items.add(MaterialActionSheetDialog.ActionItem.create(
-                    R.string.open_in_browser,
-                    getString(R.string.open_in_browser),
-                    R.drawable.ic_language,
-                    () -> ShareUtils.openUrlInBrowser(requireActivity(), url)));
-            for (int i = 0; i < videoStreamsForExternalPlayers.size(); i++) {
-                final int index = i;
-                items.add(MaterialActionSheetDialog.ActionItem.checked(
-                        index,
-                        videoStreamsForExternalPlayers.get(i).getResolution(),
-                        0,
-                        index == selectedVideoStreamIndexForExternalPlayers,
-                        () -> startOnExternalPlayer(
-                                activity,
-                                currentInfo,
-                                videoStreamsForExternalPlayers.get(index))));
-            }
-            MaterialActionSheetDialog.show(
-                    activity,
-                    getString(R.string.select_quality_external_players),
-                    items);
+            final CharSequence[] resolutions = videoStreamsForExternalPlayers.stream()
+                    .map(VideoStream::getResolution).toArray(CharSequence[]::new);
+
+            builder.setSingleChoiceItems(resolutions, selectedVideoStreamIndexForExternalPlayers,
+                    null);
+            builder.setNegativeButton(R.string.cancel, null);
+            builder.setPositiveButton(R.string.ok, (dialog, i) -> {
+                final int index = ((AlertDialog) dialog).getListView().getCheckedItemPosition();
+                // We don't have to manage the index validity because if there is no stream
+                // available for external players, this code will be not executed and if there is
+                // no stream which matches the default resolution, 0 is returned by
+                // ListHelper.getDefaultResolutionIndex.
+                // The index cannot be outside the bounds of the list as its always between 0 and
+                // the list size - 1, .
+                startOnExternalPlayer(activity, currentInfo,
+                        videoStreamsForExternalPlayers.get(index));
+            });
         }
+        builder.show();
     }
 
     private void showExternalAudioPlaybackDialog() {
@@ -2473,28 +2421,22 @@ public final class VideoDetailFragment
         } else {
             final int selectedAudioStream =
                     ListHelper.getDefaultAudioFormat(activity, audioTracks);
-            final List<MaterialActionSheetDialog.ActionItem> items = new ArrayList<>();
-            items.add(MaterialActionSheetDialog.ActionItem.create(
-                    R.string.open_in_browser,
-                    getString(R.string.open_in_browser),
-                    R.drawable.ic_language,
-                    () -> ShareUtils.openUrlInBrowser(requireActivity(), url)));
-            for (int i = 0; i < audioTracks.size(); i++) {
-                final int index = i;
-                items.add(MaterialActionSheetDialog.ActionItem.checked(
-                        index,
-                        Localization.audioTrackName(activity, audioTracks.get(i)),
-                        0,
-                        index == selectedAudioStream,
-                        () -> startOnExternalPlayer(
-                                activity,
-                                currentInfo,
-                                audioTracks.get(index))));
-            }
-            MaterialActionSheetDialog.show(
-                    activity,
-                    getString(R.string.select_audio_track_external_players),
-                    items);
+            final CharSequence[] trackNames = audioTracks.stream()
+                    .map(audioStream -> Localization.audioTrackName(activity, audioStream))
+                    .toArray(CharSequence[]::new);
+
+            new AlertDialog.Builder(activity)
+                    .setTitle(R.string.select_audio_track_external_players)
+                    .setNeutralButton(R.string.open_in_browser, (dialog, i) ->
+                            ShareUtils.openUrlInBrowser(requireActivity(), url))
+                    .setSingleChoiceItems(trackNames, selectedAudioStream, null)
+                    .setNegativeButton(R.string.cancel, null)
+                    .setPositiveButton(R.string.ok, (dialog, i) -> {
+                        final int index = ((AlertDialog) dialog).getListView()
+                                .getCheckedItemPosition();
+                        startOnExternalPlayer(activity, currentInfo, audioTracks.get(index));
+                    })
+                    .show();
         }
     }
 

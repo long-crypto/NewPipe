@@ -2,7 +2,6 @@ package org.schabi.newpipe.settings;
 
 import android.content.ActivityNotFoundException;
 import android.content.Intent;
-import android.os.Build;
 import android.os.Bundle;
 import android.provider.Settings;
 import android.widget.Toast;
@@ -51,24 +50,6 @@ public class AppearanceSettingsFragment extends BasePreferenceFragment {
                 preference.setEnabled(false);
                 preference.setSummary(getString(R.string.night_theme_available,
                         getString(R.string.auto_device_theme_title)));
-            }
-        }
-
-        final String dynamicColorsKey = getString(R.string.dynamic_colors_key);
-        final Preference dynamicColorsPreference = findPreference(dynamicColorsKey);
-        if (dynamicColorsPreference != null) {
-            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S) {
-                getPreferenceScreen().removePreference(dynamicColorsPreference);
-            } else {
-                dynamicColorsPreference.setOnPreferenceChangeListener((preference, newValue) -> {
-                    defaultPreferences.edit()
-                            .putBoolean(dynamicColorsKey, (Boolean) newValue)
-                            .apply();
-                    if (getActivity() != null) {
-                        ActivityCompat.recreate(getActivity());
-                    }
-                    return false;
-                });
             }
         }
     }

@@ -2,21 +2,11 @@
 <ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:fadeScrollbars="false"
-    android:fillViewport="true"
-    android:paddingStart="16dp"
-    android:paddingTop="16dp"
-    android:paddingEnd="16dp"
-    android:paddingBottom="16dp">
+    android:fadeScrollbars="false">
 
     <RadioGroup
         android:id="@android:id/list"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:background="@drawable/bg_pilot_surface"
-        android:clipToOutline="true"
-        android:orientation="vertical"
-        android:paddingTop="8dp"
-        android:paddingBottom="8dp" />
+        android:paddingTop="?attr/listPreferredItemPaddingLeft" />
 </ScrollView>
-

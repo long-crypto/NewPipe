@@ -14,6 +14,7 @@ import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts.StartActivityForResult;
 import androidx.annotation.NonNull;
 import androidx.annotation.StringRes;
+import androidx.appcompat.app.AlertDialog;
 import androidx.preference.Preference;
 import androidx.preference.SwitchPreferenceCompat;
 
@@ -151,7 +152,7 @@ public class DownloadSettingsFragment extends BasePreferenceFragment {
     }
 
     private void showMessageDialog(@StringRes final int title, @StringRes final int message) {
-        new com.google.android.material.dialog.MaterialAlertDialogBuilder(ctx)
+        new AlertDialog.Builder(ctx)
                 .setTitle(title)
                 .setMessage(message)
                 .setPositiveButton(getString(R.string.ok), null)

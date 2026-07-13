@@ -4,21 +4,16 @@ import static org.schabi.newpipe.MainActivity.DEBUG;
 
 import android.app.Activity;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.os.Build;
-import android.view.LayoutInflater;
 import android.util.Log;
 import android.view.View;
-import android.view.ViewGroup;
-import android.widget.ImageView;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
+import androidx.appcompat.app.AlertDialog;
 import androidx.fragment.app.Fragment;
 import androidx.preference.PreferenceManager;
-import androidx.recyclerview.widget.LinearLayoutManager;
-import androidx.recyclerview.widget.RecyclerView;
-
-import com.google.android.material.bottomsheet.BottomSheetDialog;
 
 import org.schabi.newpipe.App;
 import org.schabi.newpipe.R;
@@ -44,9 +39,13 @@ import java.util.stream.Stream;
 public final class InfoItemDialog {
     private static final String TAG = Build.class.getSimpleName();
     /**
-     * Holds the Material bottom sheet shown by {@link #show()}.
+     * Ideally, {@link InfoItemDialog} would extend {@link AlertDialog}.
+     * However, extending {@link AlertDialog} requires many additional lines
+     * and brings more complexity to this class, especially the constructor.
+     * To circumvent this, an {@link AlertDialog.Builder} is used in the constructor.
+     * Its result is stored in this class variable to allow access via the {@link #show()} method.
      */
-    private final BottomSheetDialog dialog;
+    private final AlertDialog dialog;
 
     private InfoItemDialog(@NonNull final Activity activity,
                            @NonNull final Fragment fragment,
@@ -69,21 +68,18 @@ public final class InfoItemDialog {
         }
 
         // Get the entry's descriptions which are displayed in the dialog
-        final View root = LayoutInflater.from(activity)
-                .inflate(R.layout.dialog_info_item_sheet, null, false);
-        final ViewGroup headerContainer = root.findViewById(R.id.actionSheetHeaderContainer);
-        headerContainer.addView(bannerView);
+        final String[] items = entries.stream()
+                .map(entry -> entry.getString(activity)).toArray(String[]::new);
 
-        final BottomSheetDialog bottomSheetDialog = new BottomSheetDialog(activity);
-        final RecyclerView recyclerView = root.findViewById(R.id.actionSheetList);
-        recyclerView.setLayoutManager(new LinearLayoutManager(activity));
-        recyclerView.setAdapter(new StreamDialogAdapter(activity, entries, entry -> {
-            bottomSheetDialog.dismiss();
-            entry.action.onClick(fragment, info);
-        }));
+        // Call an entry's action / onClick method when the entry is selected.
+        final DialogInterface.OnClickListener action = (d, index) ->
+            entries.get(index).action.onClick(fragment, info);
 
-        dialog = bottomSheetDialog;
-        dialog.setContentView(root);
+        dialog = new AlertDialog.Builder(activity)
+                .setCustomTitle(bannerView)
+                .setItems(items, action)
+                .create();
+
     }
 
     public void show() {
@@ -242,10 +238,7 @@ public final class InfoItemDialog {
                               @NonNull final StreamDialogEntry.StreamDialogEntryAction action) {
             for (int i = 0; i < entries.size(); i++) {
                 if (entries.get(i).resource == entry.resource) {
-                    entries.set(i, new StreamDialogEntry(
-                            entry.resource,
-                            entry.iconResource,
-                            action));
+                    entries.set(i, new StreamDialogEntry(entry.resource, action));
                     return this;
                 }
             }
@@ -358,68 +351,6 @@ public final class InfoItemDialog {
                     UserAction.OPEN_INFO_ITEM_DIALOG,
                     "none",
                     item.getServiceId()));
-        }
-    }
-
-    private interface OnStreamDialogEntryClickListener {
-        void onEntryClicked(@NonNull StreamDialogEntry entry);
-    }
-
-    private static final class StreamDialogAdapter
-            extends RecyclerView.Adapter<StreamDialogAdapter.ViewHolder> {
-        private final LayoutInflater inflater;
-        @NonNull
-        private final List<StreamDialogEntry> entries;
-        @NonNull
-        private final OnStreamDialogEntryClickListener listener;
-
-        private StreamDialogAdapter(@NonNull final Activity activity,
-                                    @NonNull final List<StreamDialogEntry> entries,
-                                    @NonNull final OnStreamDialogEntryClickListener listener) {
-            inflater = LayoutInflater.from(activity);
-            this.entries = entries;
-            this.listener = listener;
-        }
-
-        @NonNull
-        @Override
-        public ViewHolder onCreateViewHolder(@NonNull final ViewGroup parent,
-                                             final int viewType) {
-            final View itemView = inflater.inflate(R.layout.dialog_stream_action_item, parent,
-                    false);
-            return new ViewHolder(itemView);
-        }
-
-        @Override
-        public void onBindViewHolder(@NonNull final ViewHolder holder, final int position) {
-            holder.bind(entries.get(position));
-        }
-
-        @Override
-        public int getItemCount() {
-            return entries.size();
-        }
-
-        private final class ViewHolder extends RecyclerView.ViewHolder {
-            private final ImageView iconView;
-            private final TextView titleView;
-
-            private ViewHolder(@NonNull final View itemView) {
-                super(itemView);
-                iconView = itemView.findViewById(R.id.actionIcon);
-                titleView = itemView.findViewById(R.id.actionTitle);
-            }
-
-            private void bind(@NonNull final StreamDialogEntry entry) {
-                titleView.setText(entry.getString(itemView.getContext()));
-                if (entry.iconResource == 0) {
-                    iconView.setVisibility(View.GONE);
-                } else {
-                    iconView.setVisibility(View.VISIBLE);
-                    iconView.setImageResource(entry.iconResource);
-                }
-                itemView.setOnClickListener(v -> listener.onEntryClicked(entry));
-            }
         }
     }
 }

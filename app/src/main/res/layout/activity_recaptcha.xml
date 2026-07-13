@@ -3,25 +3,20 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="?attr/colorSurface"
     android:orientation="vertical">
 
-    <com.google.android.material.appbar.MaterialToolbar
+    <androidx.appcompat.widget.Toolbar
         android:id="@+id/toolbar"
         android:layout_width="match_parent"
         android:layout_height="?attr/actionBarSize"
-        android:background="?attr/colorSurfaceContainer"
+        android:background="?attr/colorPrimary"
         android:gravity="center_vertical"
-        android:minHeight="?attr/actionBarSize"
-        app:navigationIconTint="?attr/colorOnSurface"
-        app:subtitleTextColor="?attr/colorOnSurfaceVariant"
-        app:titleTextColor="?attr/colorOnSurface" />
+        android:minHeight="?attr/actionBarSize" />
 
     <WebView
         android:id="@+id/reCaptchaWebView"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:layout_marginTop="?attr/actionBarSize"
-        android:background="?attr/colorSurface" />
+        android:layout_marginTop="?attr/actionBarSize" />
 
 </RelativeLayout>

@@ -40,7 +40,7 @@ abstract class BasePlayerGestureListener(
                     player.playerType + "], portion = [" + portion + "]"
             )
         }
-        if (playerUi.isSomeActionSheetVisible) {
+        if (playerUi.isSomePopupMenuVisible) {
             playerUi.hideControls(0, 0)
         }
         if (portion === DisplayPortion.LEFT || portion === DisplayPortion.RIGHT) {

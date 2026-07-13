@@ -19,7 +19,6 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.StringRes;
 import androidx.appcompat.app.AlertDialog;
-import androidx.appcompat.content.res.AppCompatResources;
 import androidx.core.math.MathUtils;
 import androidx.fragment.app.DialogFragment;
 import androidx.preference.PreferenceManager;
@@ -150,9 +149,7 @@ public class PlaybackParameterDialog extends DialogFragment {
         binding = DialogPlaybackParameterBinding.inflate(getLayoutInflater());
         initUI();
 
-        final AlertDialog.Builder dialogBuilder =
-                new com.google.android.material.dialog.MaterialAlertDialogBuilder(
-                        requireActivity())
+        final AlertDialog.Builder dialogBuilder = new AlertDialog.Builder(requireActivity())
                 .setView(binding.getRoot())
                 .setCancelable(true)
                 .setNegativeButton(R.string.cancel, (dialogInterface, i) -> {
@@ -349,8 +346,7 @@ public class PlaybackParameterDialog extends DialogFragment {
         final TextView textView = pitchCtrlModeComponentMapping.get(semitones);
         if (textView != null) {
             textView.setBackground(new LayerDrawable(new Drawable[]{
-                    Objects.requireNonNull(AppCompatResources.getDrawable(
-                            requireContext(), R.drawable.bg_md3_dashed_border)),
+                    resolveDrawable(requireContext(), R.attr.dashed_border),
                     resolveDrawable(requireContext(), android.R.attr.selectableItemBackground)
             }));
         }
@@ -423,8 +419,7 @@ public class PlaybackParameterDialog extends DialogFragment {
         final TextView textView = stepSiteComponentMapping.get(newStepSize);
         if (textView != null) {
             textView.setBackground(new LayerDrawable(new Drawable[]{
-                    Objects.requireNonNull(AppCompatResources.getDrawable(
-                            requireContext(), R.drawable.bg_md3_dashed_border)),
+                    resolveDrawable(requireContext(), R.attr.dashed_border),
                     resolveDrawable(requireContext(), android.R.attr.selectableItemBackground)
             }));
         }

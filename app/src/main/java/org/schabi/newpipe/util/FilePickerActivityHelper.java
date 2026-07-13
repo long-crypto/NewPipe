@@ -39,8 +39,11 @@ public class FilePickerActivityHelper extends com.nononsenseapps.filepicker.File
 
     @Override
     public void onCreate(final Bundle savedInstanceState) {
-        ThemeHelper.setDayNightMode(this);
-        ThemeHelper.setThemeResource(this, resolveFilePickerTheme());
+        if (ThemeHelper.isLightThemeSelected(this)) {
+            this.setTheme(R.style.FilePickerThemeLight);
+        } else {
+            this.setTheme(R.style.FilePickerThemeDark);
+        }
         super.onCreate(savedInstanceState);
         backPressedCallback = new OnBackPressedCallback(false) {
             @Override
@@ -50,17 +53,6 @@ public class FilePickerActivityHelper extends com.nononsenseapps.filepicker.File
         };
         getOnBackPressedDispatcher().addCallback(this, backPressedCallback);
         updateBackPressedCallbackState();
-    }
-
-    private int resolveFilePickerTheme() {
-        final int selectedTheme = ThemeHelper.getThemeForService(this, -1);
-        if (selectedTheme == R.style.LightTheme) {
-            return R.style.FilePickerThemeLight;
-        }
-        if (selectedTheme == R.style.BlackTheme) {
-            return R.style.FilePickerThemeBlack;
-        }
-        return R.style.FilePickerThemeDark;
     }
 
     private void handleBackPressed() {

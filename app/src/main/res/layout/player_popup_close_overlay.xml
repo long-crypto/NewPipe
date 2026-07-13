@@ -12,8 +12,7 @@
         android:layout_marginBottom="24dp"
         android:src="@drawable/ic_close"
         android:contentDescription="@string/close"
-        app:backgroundTint="?attr/colorPrimaryContainer"
+        app:backgroundTint="@color/light_youtube_primary_color"
         app:borderWidth="0dp"
-        app:fabSize="normal"
-        app:tint="?attr/colorOnPrimaryContainer" />
+        app:fabSize="normal" />
 </FrameLayout>
