@@ -205,7 +205,7 @@ public final class ThemeHelper {
      */
     @StyleRes
     public static int getDialogTheme(final Context context) {
-        return isLightThemeSelected(context) ? R.style.LightDialogTheme : R.style.DarkDialogTheme;
+        return getDialogTheme(context, false);
     }
 
     /**
@@ -216,8 +216,83 @@ public final class ThemeHelper {
      */
     @StyleRes
     public static int getMinWidthDialogTheme(final Context context) {
-        return isLightThemeSelected(context) ? R.style.LightDialogMinWidthTheme
-                : R.style.DarkDialogMinWidthTheme;
+        return getDialogTheme(context, true);
+    }
+
+    @StyleRes
+    private static int getDialogTheme(final Context context, final boolean minWidth) {
+        final boolean light = isLightThemeSelected(context);
+        final int defaultTheme = minWidth
+                ? (light ? R.style.LightDialogMinWidthTheme : R.style.DarkDialogMinWidthTheme)
+                : (light ? R.style.LightDialogTheme : R.style.DarkDialogTheme);
+        if (isFollowSystemThemeColor(context)) {
+            return defaultTheme;
+        }
+
+        final Resources res = context.getResources();
+        final String selectedColor = getThemeColorPreference(context);
+        if (selectedColor.equals(res.getString(R.string.theme_color_app_default_value))) {
+            return selectDialogTheme(light, minWidth,
+                    R.style.LightDialogTheme_ThemeColor_Default,
+                    R.style.DarkDialogTheme_ThemeColor_Default,
+                    R.style.LightDialogMinWidthTheme_ThemeColor_Default,
+                    R.style.DarkDialogMinWidthTheme_ThemeColor_Default);
+        } else if (selectedColor.equals(res.getString(R.string.theme_color_neutral_value))) {
+            return selectDialogTheme(light, minWidth,
+                    R.style.LightDialogTheme_ThemeColor_Neutral,
+                    R.style.DarkDialogTheme_ThemeColor_Neutral,
+                    R.style.LightDialogMinWidthTheme_ThemeColor_Neutral,
+                    R.style.DarkDialogMinWidthTheme_ThemeColor_Neutral);
+        } else if (selectedColor.equals(res.getString(R.string.theme_color_green_value))) {
+            return selectDialogTheme(light, minWidth,
+                    R.style.LightDialogTheme_ThemeColor_Green,
+                    R.style.DarkDialogTheme_ThemeColor_Green,
+                    R.style.LightDialogMinWidthTheme_ThemeColor_Green,
+                    R.style.DarkDialogMinWidthTheme_ThemeColor_Green);
+        } else if (selectedColor.equals(res.getString(R.string.theme_color_blue_value))) {
+            return selectDialogTheme(light, minWidth,
+                    R.style.LightDialogTheme_ThemeColor_Blue,
+                    R.style.DarkDialogTheme_ThemeColor_Blue,
+                    R.style.LightDialogMinWidthTheme_ThemeColor_Blue,
+                    R.style.DarkDialogMinWidthTheme_ThemeColor_Blue);
+        } else if (selectedColor.equals(res.getString(R.string.theme_color_purple_value))) {
+            return selectDialogTheme(light, minWidth,
+                    R.style.LightDialogTheme_ThemeColor_Purple,
+                    R.style.DarkDialogTheme_ThemeColor_Purple,
+                    R.style.LightDialogMinWidthTheme_ThemeColor_Purple,
+                    R.style.DarkDialogMinWidthTheme_ThemeColor_Purple);
+        } else if (selectedColor.equals(res.getString(R.string.theme_color_orange_value))) {
+            return selectDialogTheme(light, minWidth,
+                    R.style.LightDialogTheme_ThemeColor_Orange,
+                    R.style.DarkDialogTheme_ThemeColor_Orange,
+                    R.style.LightDialogMinWidthTheme_ThemeColor_Orange,
+                    R.style.DarkDialogMinWidthTheme_ThemeColor_Orange);
+        } else if (selectedColor.equals(res.getString(R.string.theme_color_pink_value))) {
+            return selectDialogTheme(light, minWidth,
+                    R.style.LightDialogTheme_ThemeColor_Pink,
+                    R.style.DarkDialogTheme_ThemeColor_Pink,
+                    R.style.LightDialogMinWidthTheme_ThemeColor_Pink,
+                    R.style.DarkDialogMinWidthTheme_ThemeColor_Pink);
+        } else if (selectedColor.equals(res.getString(R.string.theme_color_red_value))) {
+            return selectDialogTheme(light, minWidth,
+                    R.style.LightDialogTheme_ThemeColor_Red,
+                    R.style.DarkDialogTheme_ThemeColor_Red,
+                    R.style.LightDialogMinWidthTheme_ThemeColor_Red,
+                    R.style.DarkDialogMinWidthTheme_ThemeColor_Red);
+        }
+        return defaultTheme;
+    }
+
+    @StyleRes
+    private static int selectDialogTheme(final boolean light, final boolean minWidth,
+                                         @StyleRes final int lightTheme,
+                                         @StyleRes final int darkTheme,
+                                         @StyleRes final int lightMinWidthTheme,
+                                         @StyleRes final int darkMinWidthTheme) {
+        if (minWidth) {
+            return light ? lightMinWidthTheme : darkMinWidthTheme;
+        }
+        return light ? lightTheme : darkTheme;
     }
 
     /**
