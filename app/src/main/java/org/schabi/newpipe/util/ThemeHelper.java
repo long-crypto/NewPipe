@@ -37,6 +37,8 @@ import androidx.appcompat.content.res.AppCompatResources;
 import androidx.core.content.ContextCompat;
 import androidx.preference.PreferenceManager;
 
+import com.google.android.material.color.DynamicColors;
+
 import org.schabi.newpipe.R;
 import org.schabi.newpipe.info_list.ItemViewMode;
 
@@ -70,6 +72,97 @@ public final class ThemeHelper {
      */
     public static void setTheme(final Context context, final int serviceId) {
         context.setTheme(getThemeForService(context, serviceId));
+        applyThemeColor(context);
+    }
+
+    /**
+     * Apply the currently selected runtime theme color behavior.
+     *
+     * <p>Follow system uses Material You dynamic colors when available. Manual presets skip
+     * dynamic colors and apply a static Material 3 role overlay instead. Unsupported dynamic-color
+     * devices keep the base static fallback palette.</p>
+     *
+     * @param context context that will receive dynamic colors or a static color overlay
+     */
+    public static void applyThemeColor(final Context context) {
+        if (shouldApplyDynamicColors(context)) {
+            DynamicColors.applyToActivityIfAvailable((Activity) context);
+        } else {
+            applyThemeColorOverlay(context);
+        }
+    }
+
+    /**
+     * Return the selected theme color preference.
+     *
+     * @param context context to get the preference
+     * @return selected theme color preference value
+     */
+    public static String getThemeColorPreference(final Context context) {
+        return PreferenceManager.getDefaultSharedPreferences(context).getString(
+                context.getString(R.string.theme_color_key),
+                context.getString(R.string.default_theme_color_value));
+    }
+
+    /**
+     * Return true if the theme color preference should follow system dynamic color.
+     *
+     * @param context context to get the preference
+     * @return whether system dynamic color should be used when available
+     */
+    public static boolean isFollowSystemThemeColor(final Context context) {
+        return getThemeColorPreference(context)
+                .equals(context.getString(R.string.theme_color_follow_system_value));
+    }
+
+    /**
+     * Return whether Material You dynamic colors should be applied.
+     *
+     * @param context context to get theme and theme color preferences
+     * @return true when dynamic colors should be applied
+     */
+    public static boolean shouldApplyDynamicColors(final Context context) {
+        return context instanceof Activity
+                && isFollowSystemThemeColor(context)
+                && !isBlackThemeSelected(context);
+    }
+
+    /**
+     * Apply a static color preset overlay when the theme color preference is manual.
+     *
+     * @param context context that will receive a static color overlay
+     */
+    public static void applyThemeColorOverlay(final Context context) {
+        final int overlay = getThemeColorOverlay(context);
+        if (overlay != 0) {
+            context.getTheme().applyStyle(overlay, true);
+        }
+    }
+
+    @StyleRes
+    private static int getThemeColorOverlay(final Context context) {
+        final Resources res = context.getResources();
+        final String selectedThemeColor = getThemeColorPreference(context);
+
+        if (selectedThemeColor.equals(res.getString(R.string.theme_color_newpipe_material_value))) {
+            return R.style.ThemeOverlay_NewPipeMaterial_ThemeColor_NewPipeMaterial;
+        } else if (selectedThemeColor.equals(res.getString(R.string.theme_color_neutral_value))) {
+            return R.style.ThemeOverlay_NewPipeMaterial_ThemeColor_Neutral;
+        } else if (selectedThemeColor.equals(res.getString(R.string.theme_color_green_value))) {
+            return R.style.ThemeOverlay_NewPipeMaterial_ThemeColor_Green;
+        } else if (selectedThemeColor.equals(res.getString(R.string.theme_color_blue_value))) {
+            return R.style.ThemeOverlay_NewPipeMaterial_ThemeColor_Blue;
+        } else if (selectedThemeColor.equals(res.getString(R.string.theme_color_purple_value))) {
+            return R.style.ThemeOverlay_NewPipeMaterial_ThemeColor_Purple;
+        } else if (selectedThemeColor.equals(res.getString(R.string.theme_color_orange_value))) {
+            return R.style.ThemeOverlay_NewPipeMaterial_ThemeColor_Orange;
+        } else if (selectedThemeColor.equals(res.getString(R.string.theme_color_pink_value))) {
+            return R.style.ThemeOverlay_NewPipeMaterial_ThemeColor_Pink;
+        } else if (selectedThemeColor.equals(res.getString(R.string.theme_color_red_value))) {
+            return R.style.ThemeOverlay_NewPipeMaterial_ThemeColor_Red;
+        }
+
+        return 0;
     }
 
     /**
@@ -85,6 +178,23 @@ public final class ThemeHelper {
         return selectedThemeKey.equals(res.getString(R.string.light_theme_key))
                 || (selectedThemeKey.equals(res.getString(R.string.auto_device_theme_key))
                 && !isDeviceDarkThemeEnabled(context));
+    }
+
+    /**
+     * Return true if the selected theme resolves to the Black theme.
+     *
+     * @param context context to get the preference
+     * @return whether the black theme is selected or resolved from automatic device theme
+     */
+    public static boolean isBlackThemeSelected(final Context context) {
+        final String selectedThemeKey = getSelectedThemeKey(context);
+        final Resources res = context.getResources();
+        final String blackThemeKey = res.getString(R.string.black_theme_key);
+
+        return selectedThemeKey.equals(blackThemeKey)
+                || (selectedThemeKey.equals(res.getString(R.string.auto_device_theme_key))
+                && isDeviceDarkThemeEnabled(context)
+                && getSelectedNightThemeKey(context).equals(blackThemeKey));
     }
 
     /**
@@ -152,14 +262,12 @@ public final class ThemeHelper {
         if (serviceId <= -1) {
             return baseTheme;
         }
-
         String themeName = "DarkTheme"; // default
         if (baseTheme == R.style.LightTheme) {
             themeName = "LightTheme";
         } else if (baseTheme == R.style.BlackTheme) {
             themeName = "BlackTheme";
         }
-
         final String serviceName = ServiceHelper.getNameOfServiceById(serviceId);
         if ("<unknown>".equals(serviceName)) {
             return baseTheme;
