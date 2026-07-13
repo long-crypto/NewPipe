@@ -24,7 +24,6 @@ import android.content.Context;
 import android.content.res.Configuration;
 import android.content.res.Resources;
 import android.graphics.drawable.Drawable;
-import android.os.Build;
 import android.util.TypedValue;
 
 import androidx.annotation.AttrRes;
@@ -40,9 +39,6 @@ import androidx.preference.PreferenceManager;
 
 import org.schabi.newpipe.R;
 import org.schabi.newpipe.info_list.ItemViewMode;
-
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 
 public final class ThemeHelper {
     private ThemeHelper() {
@@ -73,27 +69,7 @@ public final class ThemeHelper {
      *                  pass -1 to get the default style
      */
     public static void setTheme(final Context context, final int serviceId) {
-        setThemeResource(context, getThemeForService(context, serviceId));
-    }
-
-    /**
-     * Apply a theme resource and, when enabled, the dynamic color overlay.
-     *
-     * @param context the context that the theme will be applied to
-     * @param themeResId the theme resource id to apply
-     */
-    public static void setThemeResource(final Context context, @StyleRes final int themeResId) {
-        context.setTheme(themeResId);
-        maybeApplyDynamicColors(context);
-    }
-
-    /**
-     * Apply the settings theme and, when enabled, the dynamic color overlay.
-     *
-     * @param context the context that the theme will be applied to
-     */
-    public static void setSettingsTheme(final Context context) {
-        setThemeResource(context, getSettingsThemeStyle(context));
+        context.setTheme(getThemeForService(context, serviceId));
     }
 
     /**
@@ -190,8 +166,7 @@ public final class ThemeHelper {
         }
 
         themeName += "." + serviceName;
-        final int resourceId = context.getResources()
-                .getIdentifier(themeName, "style", context.getPackageName());
+        final int resourceId = getThemeOrDefault(themeName, baseTheme);
 
         if (resourceId > 0) {
             return resourceId;
@@ -230,45 +205,6 @@ public final class ThemeHelper {
             // default to dark theme
             return R.style.DarkSettingsTheme;
         }
-    }
-
-    /**
-     * Return whether dynamic colors should be applied on this device and theme.
-     *
-     * @param context context to read preferences and theme state from
-     * @return whether dynamic colors should be applied
-     */
-    public static boolean shouldApplyDynamicColors(final Context context) {
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S) {
-            return false;
-        }
-
-        final String key = context.getString(R.string.dynamic_colors_key);
-        if (!PreferenceManager.getDefaultSharedPreferences(context).getBoolean(key, false)) {
-            return false;
-        }
-
-        return getThemeForService(context, -1) != R.style.BlackTheme;
-    }
-
-    /**
-     * Return a small signature of the current dynamic palette so activities can detect wallpaper
-     * palette changes and recreate themselves.
-     *
-     * @param context context to read dynamic system colors from
-     * @return an int signature for the current dynamic palette, or 0 when dynamic colors are off
-     */
-    public static int getDynamicColorsSignature(final Context context) {
-        if (!shouldApplyDynamicColors(context)) {
-            return 0;
-        }
-
-        int signature = 17;
-        signature = 31 * signature + resolveAndroidColor(context, "system_accent1_600");
-        signature = 31 * signature + resolveAndroidColor(context, "system_accent2_600");
-        signature = 31 * signature + resolveAndroidColor(context, "system_neutral1_200");
-        signature = 31 * signature + resolveAndroidColor(context, "system_neutral1_800");
-        return signature;
     }
 
     /**
@@ -391,50 +327,6 @@ public final class ThemeHelper {
         }
     }
 
-    private static void maybeApplyDynamicColors(final Context context) {
-        if (!shouldApplyDynamicColors(context)) {
-            return;
-        }
-
-        final int dynamicColorsOverlay = isLightThemeSelected(context)
-                ? R.style.ThemeOverlay_NewPipe_DynamicColors_Light
-                : R.style.ThemeOverlay_NewPipe_DynamicColors_Dark;
-        context.getTheme().applyStyle(dynamicColorsOverlay, true);
-
-        if (!(context instanceof Activity)) {
-            return;
-        }
-
-        final Activity activity = (Activity) context;
-        try {
-            final Class<?> dynamicColorsClass =
-                    Class.forName("com.google.android.material.color.DynamicColors");
-            try {
-                final Method method = dynamicColorsClass.getMethod(
-                        "applyToActivityIfAvailable", Activity.class);
-                method.invoke(null, activity);
-            } catch (final NoSuchMethodException e) {
-                final Method legacyMethod = dynamicColorsClass.getMethod(
-                        "applyIfAvailable", Activity.class);
-                legacyMethod.invoke(null, activity);
-            }
-        } catch (final ClassNotFoundException
-                | IllegalAccessException
-                | InvocationTargetException
-                | NoSuchMethodException ignored) {
-            // Material dynamic colors are optional. Fall back to the static palette.
-        }
-    }
-
-    private static int resolveAndroidColor(@NonNull final Context context,
-                                           @NonNull final String colorName) {
-        final int colorId = context.getResources().getIdentifier(colorName, "color", "android");
-        if (colorId == 0) {
-            return 0;
-        }
-        return ContextCompat.getColor(context, colorId);
-    }
-
     /**
      * Returns whether the grid layout or the list layout should be used. If the user set "auto"
      * mode in settings, decides based on screen orientation (landscape) and size.
@@ -513,5 +405,27 @@ public final class ThemeHelper {
      */
     public static int getGridSpanCount(final Context context, final int minWidth) {
         return Math.max(1, context.getResources().getDisplayMetrics().widthPixels / minWidth);
+    }
+
+    @StyleRes
+    private static int getThemeOrDefault(final String name, @StyleRes final int baseTheme) {
+        return switch (name) {
+            case "LightTheme.YouTube" -> R.style.LightTheme_YouTube;
+            case "DarkTheme.YouTube" -> R.style.DarkTheme_YouTube;
+            case "BlackTheme.YouTube" -> R.style.BlackTheme_YouTube;
+            case "LightTheme.SoundCloud" -> R.style.LightTheme_SoundCloud;
+            case "DarkTheme.SoundCloud" -> R.style.DarkTheme_SoundCloud;
+            case "BlackTheme.SoundCloud" -> R.style.BlackTheme_SoundCloud;
+            case "LightTheme.PeerTube" -> R.style.LightTheme_PeerTube;
+            case "DarkTheme.PeerTube" -> R.style.DarkTheme_PeerTube;
+            case "BlackTheme.PeerTube" -> R.style.BlackTheme_PeerTube;
+            case "LightTheme.media.ccc.de" -> R.style.LightTheme_media_ccc_de;
+            case "DarkTheme.media.ccc.de" -> R.style.DarkTheme_media_ccc_de;
+            case "BlackTheme.media.ccc.de" -> R.style.BlackTheme_media_ccc_de;
+            case "LightTheme.Bandcamp" -> R.style.LightTheme_Bandcamp;
+            case "DarkTheme.Bandcamp" -> R.style.DarkTheme_Bandcamp;
+            case "BlackTheme.Bandcamp" -> R.style.BlackTheme_Bandcamp;
+            default -> baseTheme;
+        };
     }
 }
