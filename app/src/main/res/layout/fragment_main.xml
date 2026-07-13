@@ -34,7 +34,7 @@
         android:layout_alignParentBottom="true"
         android:background="?attr/colorSurface"
         android:visibility="gone"
-        app:itemActiveIndicatorStyle="@style/NewPipeMaterialBottomNavigationActiveIndicator"
+        app:itemActiveIndicatorStyle="@style/NewPipeMd3BottomNavigationActiveIndicator"
         app:itemIconTint="@color/tab_layout_material_item_color"
         app:itemPaddingBottom="@dimen/main_bottom_navigation_item_padding_bottom"
         app:itemPaddingTop="@dimen/main_bottom_navigation_item_padding_top"

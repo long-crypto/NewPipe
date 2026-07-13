@@ -144,22 +144,22 @@ public final class ThemeHelper {
         final Resources res = context.getResources();
         final String selectedThemeColor = getThemeColorPreference(context);
 
-        if (selectedThemeColor.equals(res.getString(R.string.theme_color_newpipe_material_value))) {
-            return R.style.ThemeOverlay_NewPipeMaterial_ThemeColor_NewPipeMaterial;
+        if (selectedThemeColor.equals(res.getString(R.string.theme_color_app_default_value))) {
+            return R.style.ThemeOverlay_NewPipe_ThemeColor_Default;
         } else if (selectedThemeColor.equals(res.getString(R.string.theme_color_neutral_value))) {
-            return R.style.ThemeOverlay_NewPipeMaterial_ThemeColor_Neutral;
+            return R.style.ThemeOverlay_NewPipe_ThemeColor_Neutral;
         } else if (selectedThemeColor.equals(res.getString(R.string.theme_color_green_value))) {
-            return R.style.ThemeOverlay_NewPipeMaterial_ThemeColor_Green;
+            return R.style.ThemeOverlay_NewPipe_ThemeColor_Green;
         } else if (selectedThemeColor.equals(res.getString(R.string.theme_color_blue_value))) {
-            return R.style.ThemeOverlay_NewPipeMaterial_ThemeColor_Blue;
+            return R.style.ThemeOverlay_NewPipe_ThemeColor_Blue;
         } else if (selectedThemeColor.equals(res.getString(R.string.theme_color_purple_value))) {
-            return R.style.ThemeOverlay_NewPipeMaterial_ThemeColor_Purple;
+            return R.style.ThemeOverlay_NewPipe_ThemeColor_Purple;
         } else if (selectedThemeColor.equals(res.getString(R.string.theme_color_orange_value))) {
-            return R.style.ThemeOverlay_NewPipeMaterial_ThemeColor_Orange;
+            return R.style.ThemeOverlay_NewPipe_ThemeColor_Orange;
         } else if (selectedThemeColor.equals(res.getString(R.string.theme_color_pink_value))) {
-            return R.style.ThemeOverlay_NewPipeMaterial_ThemeColor_Pink;
+            return R.style.ThemeOverlay_NewPipe_ThemeColor_Pink;
         } else if (selectedThemeColor.equals(res.getString(R.string.theme_color_red_value))) {
-            return R.style.ThemeOverlay_NewPipeMaterial_ThemeColor_Red;
+            return R.style.ThemeOverlay_NewPipe_ThemeColor_Red;
         }
 
         return 0;

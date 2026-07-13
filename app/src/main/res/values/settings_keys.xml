@@ -276,7 +276,7 @@
     <string name="default_night_theme_value">@string/dark_theme_key</string>
     <string name="theme_color_key">theme_color</string>
     <string name="theme_color_follow_system_value">follow_system</string>
-    <string name="theme_color_newpipe_material_value">newpipe_material</string>
+    <string name="theme_color_app_default_value">app_default</string>
     <string name="theme_color_neutral_value">neutral</string>
     <string name="theme_color_green_value">green</string>
     <string name="theme_color_blue_value">blue</string>
@@ -287,7 +287,7 @@
     <string name="default_theme_color_value">@string/theme_color_follow_system_value</string>
     <string-array name="theme_color_values_list">
         <item>@string/theme_color_follow_system_value</item>
-        <item>@string/theme_color_newpipe_material_value</item>
+        <item>@string/theme_color_app_default_value</item>
         <item>@string/theme_color_neutral_value</item>
         <item>@string/theme_color_green_value</item>
         <item>@string/theme_color_blue_value</item>
@@ -298,7 +298,7 @@
     </string-array>
     <string-array name="theme_color_description_list">
         <item>@string/theme_color_follow_system_title</item>
-        <item>@string/theme_color_newpipe_material_title</item>
+        <item>@string/theme_color_app_default_title</item>
         <item>@string/theme_color_neutral_title</item>
         <item>@string/theme_color_green_title</item>
         <item>@string/theme_color_blue_title</item>

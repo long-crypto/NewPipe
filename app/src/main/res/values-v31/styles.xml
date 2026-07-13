@@ -5,7 +5,7 @@
          This is separate from android:windowBackground used by pre-Android 12 startup. -->
     <style name="OpeningTheme" parent="Base.OpeningTheme">
         <item name="android:windowSplashScreenBackground">@color/light_m3_secondary_container_color</item>
-        <item name="android:windowSplashScreenAnimatedIcon">@drawable/ic_newpipe_material_splash</item>
+        <item name="android:windowSplashScreenAnimatedIcon">@drawable/ic_md3_splash</item>
         <item name="android:windowSplashScreenIconBackgroundColor">@android:color/transparent</item>
         <item name="android:statusBarColor">@color/light_m3_secondary_container_color</item>
         <item name="android:navigationBarColor">@color/light_m3_secondary_container_color</item>
