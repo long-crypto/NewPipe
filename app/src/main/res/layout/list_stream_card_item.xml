@@ -5,21 +5,20 @@
     android:id="@+id/itemRoot"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
+    android:layout_marginHorizontal="@dimen/stream_card_horizontal_margin"
     android:paddingTop="@dimen/channel_item_grid_padding"
     android:paddingBottom="@dimen/channel_item_grid_padding"
     android:background="?attr/selectableItemBackground"
     android:clickable="true"
     android:focusable="true">
 
-    <ImageView
+    <com.google.android.material.imageview.ShapeableImageView
         android:id="@+id/itemThumbnailView"
         android:layout_width="0dp"
         android:layout_height="0dp"
-        android:layout_marginStart="2dp"
-        android:layout_marginEnd="2dp"
         android:scaleType="centerCrop"
         android:src="@drawable/placeholder_thumbnail_video"
-        app:layout_constraintBottom_toTopOf="@+id/itemProgressView"
+        app:shapeAppearanceOverlay="@style/ShapeAppearanceOverlay.NewPipeMaterial.StreamThumbnail"
         app:layout_constraintDimensionRatio="16:9"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
@@ -93,8 +92,10 @@
         android:id="@+id/itemProgressView"
         style="@style/Widget.AppCompat.ProgressBar.Horizontal"
         android:layout_width="0dp"
-        android:layout_height="4dp"
-        android:progressDrawable="?progress_horizontal_drawable"
+        android:layout_height="@dimen/stream_thumbnail_progress_height"
+        android:layout_marginBottom="@dimen/stream_thumbnail_progress_bottom_margin"
+        android:layout_marginHorizontal="@dimen/stream_thumbnail_progress_horizontal_inset"
+        android:progressDrawable="@drawable/progress_stream_thumbnail_material"
         app:layout_constraintBottom_toBottomOf="@id/itemThumbnailView"
         app:layout_constraintEnd_toEndOf="@+id/itemThumbnailView"
         app:layout_constraintStart_toStartOf="@+id/itemThumbnailView" />

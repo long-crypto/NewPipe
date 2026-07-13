@@ -7,6 +7,13 @@
     <dimen name="spacing_micro">4dp</dimen>
     <dimen name="spacing_nano">2dp</dimen>
 
+    <!-- Settings card dimensions -->
+    <dimen name="settings_card_margin_horizontal">16dp</dimen>
+    <dimen name="settings_card_margin_top">8dp</dimen>
+    <dimen name="settings_card_margin_bottom">16dp</dimen>
+    <dimen name="settings_card_corner_radius">24dp</dimen>
+    <dimen name="settings_category_spacing_top">8dp</dimen>
+
     <!-- Menu Drawer Dimensions -->
     <dimen name="drawer_header_content_min_height">120dp</dimen>
     <dimen name="drawer_header_padding_top">16dp</dimen>
@@ -36,6 +43,12 @@
     <dimen name="video_item_search_avatar_right_margin">33dp</dimen>
     <dimen name="video_item_grid_thumbnail_image_width">164dp</dimen>
     <dimen name="video_item_grid_thumbnail_image_height">92dp</dimen>
+    <dimen name="stream_thumbnail_corner_radius">12dp</dimen>
+    <dimen name="stream_thumbnail_progress_height">3dp</dimen>
+    <dimen name="stream_thumbnail_progress_bottom_margin">3dp</dimen>
+    <dimen name="stream_thumbnail_progress_horizontal_inset">2dp</dimen>
+    <dimen name="stream_thumbnail_duration_margin_with_progress">20dp</dimen>
+    <dimen name="stream_card_horizontal_margin">12dp</dimen>
 
     <dimen name="channel_item_card_thumbnail_image_size">100dp</dimen>
     <dimen name="channel_item_grid_thumbnail_image_size">92dp</dimen>
