@@ -22,7 +22,6 @@ import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
@@ -31,6 +30,7 @@ import java.util.stream.Stream;
 
 import okhttp3.Call;
 import okhttp3.Callback;
+import okhttp3.MediaType;
 import okhttp3.OkHttpClient;
 import okhttp3.RequestBody;
 import okhttp3.ResponseBody;
@@ -143,18 +143,17 @@ public final class DownloaderImpl extends Downloader {
     @Override
     public Response execute(@NonNull final Request request)
             throws IOException, ReCaptchaException {
-        final okhttp3.Request requestToCall = buildRequest(request);
-        try (okhttp3.Response response = client.newCall(requestToCall).execute()) {
-            return buildResponse(request.url(), response);
+        final okhttp3.Request okHttpRequest = buildRequest(request);
+        try (okhttp3.Response response = client.newCall(okHttpRequest).execute()) {
+            return buildExtractorResponse(response, request.url());
         }
     }
 
     @Override
     public CancellableCall executeAsync(@NonNull final Request request,
-                                        @NonNull final AsyncCallback callback)
+                                        final AsyncCallback callback)
             throws IOException, ReCaptchaException {
-        final okhttp3.Request requestToCall = buildRequest(request);
-        final Call call = client.newCall(requestToCall);
+        final Call call = client.newCall(buildRequest(request));
         final CancellableCall cancellableCall = new CancellableCall(call);
         call.enqueue(new Callback() {
             @Override
@@ -167,11 +166,13 @@ public final class DownloaderImpl extends Downloader {
             public void onResponse(@NonNull final Call call,
                                    @NonNull final okhttp3.Response response) {
                 try (response) {
-                    callback.onSuccess(buildResponse(request.url(), response));
-                } catch (final IOException | ExtractionException e) {
-                    callback.onError(e);
-                } finally {
+                    final Response extractorResponse = buildExtractorResponse(
+                            response, request.url());
                     cancellableCall.setFinished();
+                    callback.onSuccess(extractorResponse);
+                } catch (final IOException | ExtractionException e) {
+                    cancellableCall.setFinished();
+                    callback.onError(e);
                 }
             }
         });
@@ -188,8 +189,6 @@ public final class DownloaderImpl extends Downloader {
         RequestBody requestBody = null;
         if (dataToSend != null) {
             requestBody = RequestBody.create(dataToSend);
-        } else if (requiresRequestBody(httpMethod)) {
-            requestBody = RequestBody.create(new byte[0]);
         }
 
         final okhttp3.Request.Builder requestBuilder = new okhttp3.Request.Builder()
@@ -210,36 +209,20 @@ public final class DownloaderImpl extends Downloader {
         return requestBuilder.build();
     }
 
-    private static boolean requiresRequestBody(@NonNull final String httpMethod) {
-        switch (httpMethod.toUpperCase(Locale.ROOT)) {
-            case "POST":
-            case "PUT":
-            case "PATCH":
-            case "PROPPATCH":
-            case "REPORT":
-                return true;
-            default:
-                return false;
-        }
-    }
-
     @NonNull
-    private Response buildResponse(@NonNull final String requestUrl,
-                                   @NonNull final okhttp3.Response response)
+    private static Response buildExtractorResponse(@NonNull final okhttp3.Response response,
+                                                   @NonNull final String originalUrl)
             throws IOException, ReCaptchaException {
         if (response.code() == 429) {
-            throw new ReCaptchaException("reCaptcha Challenge requested", requestUrl);
+            throw new ReCaptchaException("reCaptcha Challenge requested", originalUrl);
         }
 
-        byte[] rawResponseBody = null;
+        byte[] responseBodyBytes = new byte[0];
         String responseBodyToReturn = null;
         try (ResponseBody body = response.body()) {
             if (body != null) {
-                rawResponseBody = body.bytes();
-                final Charset charset = body.contentType() != null
-                        ? body.contentType().charset(StandardCharsets.UTF_8)
-                        : StandardCharsets.UTF_8;
-                responseBodyToReturn = new String(rawResponseBody, charset);
+                responseBodyBytes = body.bytes();
+                responseBodyToReturn = new String(responseBodyBytes, responseCharset(body));
             }
         }
 
@@ -249,7 +232,15 @@ public final class DownloaderImpl extends Downloader {
                 response.message(),
                 response.headers().toMultimap(),
                 responseBodyToReturn,
-                rawResponseBody,
+                responseBodyBytes,
                 latestUrl);
     }
+
+    @NonNull
+    private static Charset responseCharset(@NonNull final ResponseBody body) {
+        final MediaType contentType = body.contentType();
+        return contentType == null
+                ? StandardCharsets.UTF_8 : contentType.charset(StandardCharsets.UTF_8);
+    }
+
 }

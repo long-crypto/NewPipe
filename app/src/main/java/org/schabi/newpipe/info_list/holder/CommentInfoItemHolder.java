@@ -23,6 +23,7 @@ import androidx.fragment.app.FragmentActivity;
 import org.schabi.newpipe.R;
 import org.schabi.newpipe.extractor.InfoItem;
 import org.schabi.newpipe.extractor.comments.CommentsInfoItem;
+import org.schabi.newpipe.extractor.stream.Description;
 import org.schabi.newpipe.info_list.InfoItemBuilder;
 import org.schabi.newpipe.local.history.HistoryRecordManager;
 import org.schabi.newpipe.util.CommentPictureHelper;
@@ -31,10 +32,9 @@ import org.schabi.newpipe.util.Localization;
 import org.schabi.newpipe.util.NavigationHelper;
 import org.schabi.newpipe.util.external_communication.ShareUtils;
 import org.schabi.newpipe.util.image.CoilHelper;
+import org.schabi.newpipe.util.image.ExtractorImageCompat;
 import org.schabi.newpipe.util.image.ImageStrategy;
-import org.schabi.newpipe.util.text.InternalUrlsHandler;
 import org.schabi.newpipe.util.text.TextEllipsizer;
-import org.schabi.newpipe.util.text.TimestampExtractor;
 
 public class CommentInfoItemHolder extends InfoItemHolder {
 
@@ -96,7 +96,8 @@ public class CommentInfoItemHolder extends InfoItemHolder {
         }
 
         // load the author avatar
-        CoilHelper.INSTANCE.loadAvatar(itemThumbnailView, item.getUploaderAvatars());
+        CoilHelper.INSTANCE.loadAvatar(itemThumbnailView,
+                ExtractorImageCompat.uploaderAvatarImages(item));
         if (ImageStrategy.shouldLoadImages()) {
             itemThumbnailView.setVisibility(View.VISIBLE);
             itemRoot.setPadding(commentVerticalPadding, commentVerticalPadding,
@@ -134,12 +135,10 @@ public class CommentInfoItemHolder extends InfoItemHolder {
 
 
         // setup comment content and click listeners to expand/ellipsize it
-        final var streamingService = getServiceById(item.getServiceId());
-        final String relatedStreamUrl = itemBuilder.getRelatedStreamUrl() != null
-                ? itemBuilder.getRelatedStreamUrl() : item.getUrl();
-        textEllipsizer.setStreamingService(streamingService);
-        textEllipsizer.setStreamUrl(relatedStreamUrl);
-        textEllipsizer.setContent(item.getCommentText());
+        textEllipsizer.setStreamingService(getServiceById(item.getServiceId()));
+        textEllipsizer.setStreamUrl(item.getUrl());
+        textEllipsizer.setContent(
+                new Description(item.getCommentText(), Description.PLAIN_TEXT));
         textEllipsizer.ellipsize();
         CommentPictureHelper.bindCommentPictures(
                 commentPicturesScrollView,
@@ -149,11 +148,11 @@ public class CommentInfoItemHolder extends InfoItemHolder {
         //noinspection ClickableViewAccessibility
         itemContentView.setOnTouchListener((v, event) -> {
             final CharSequence text = itemContentView.getText();
-            final int action = event.getAction();
+            if (text instanceof Spanned buffer) {
+                final int action = event.getAction();
 
-            if (action == MotionEvent.ACTION_UP || action == MotionEvent.ACTION_DOWN) {
-                final int offset = getOffsetForHorizontalLine(itemContentView, event);
-                if (text instanceof Spanned buffer) {
+                if (action == MotionEvent.ACTION_UP || action == MotionEvent.ACTION_DOWN) {
+                    final int offset = getOffsetForHorizontalLine(itemContentView, event);
                     final var links = buffer.getSpans(offset, offset, ClickableSpan.class);
 
                     if (links.length != 0) {
@@ -163,20 +162,6 @@ public class CommentInfoItemHolder extends InfoItemHolder {
                         // we handle events that intersect links, so return true
                         return true;
                     }
-                }
-
-                final TimestampExtractor.TimestampMatchDTO timestampMatchDTO =
-                        TimestampExtractor.getTimestampAt(text, offset);
-                if (timestampMatchDTO != null) {
-                    if (action == MotionEvent.ACTION_UP) {
-                        final String targetUrl =
-                                InternalUrlsHandler.resolveTimestampRelatedStreamUrl(
-                                        relatedStreamUrl, streamingService, text,
-                                        timestampMatchDTO);
-                        InternalUrlsHandler.playOnPopup(itemContentView.getContext(),
-                                targetUrl, streamingService, timestampMatchDTO.seconds());
-                    }
-                    return true;
                 }
             }
             return false;

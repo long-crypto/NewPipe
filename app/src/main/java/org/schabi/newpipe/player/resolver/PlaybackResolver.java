@@ -38,6 +38,7 @@ import org.schabi.newpipe.player.datasource.NonUriHlsDataSourceFactory;
 import org.schabi.newpipe.player.helper.PlayerDataSource;
 import org.schabi.newpipe.player.mediaitem.MediaItemTag;
 import org.schabi.newpipe.player.mediaitem.StreamInfoTag;
+import org.schabi.newpipe.util.Localization;
 import org.schabi.newpipe.util.StreamTypeUtil;
 
 import java.io.ByteArrayInputStream;
@@ -163,7 +164,7 @@ public interface PlaybackResolver extends Resolver<StreamInfo, MediaSource> {
 
         if (audioStream.getAudioLocale() != null) {
             cacheKey.append(" ");
-            cacheKey.append(audioStream.getAudioLocale().getISO3Language());
+            cacheKey.append(Localization.audioLocaleIso3OrRaw(audioStream.getAudioLocale()));
         }
 
         return cacheKey.toString();
@@ -208,19 +209,6 @@ public interface PlaybackResolver extends Resolver<StreamInfo, MediaSource> {
                         dataSource, info.getDashMpdUrl(), C.CONTENT_TYPE_DASH, tag);
             }
             if (!info.getHlsUrl().isEmpty()) {
-                if (info.getService() == ServiceList.NicoNico) {
-                    return dataSource.getNiconicoHlsMediaSourceFactory(info.getHlsUrl())
-                            .createMediaSource(
-                                    new MediaItem.Builder()
-                                            .setTag(tag)
-                                            .setUri(Uri.parse(stripUriFragment(info.getHlsUrl())))
-                                            .setLiveConfiguration(
-                                                    new MediaItem.LiveConfiguration.Builder()
-                                                            .setTargetOffsetMs(
-                                                                    LIVE_STREAM_EDGE_GAP_MILLIS)
-                                                            .build())
-                                            .build());
-                }
                 return buildLiveMediaSource(dataSource, info.getHlsUrl(), C.CONTENT_TYPE_HLS, tag);
             }
         } catch (final Exception e) {
@@ -292,9 +280,6 @@ public interface PlaybackResolver extends Resolver<StreamInfo, MediaSource> {
         }
         if (streamInfo.getService() == ServiceList.BiliBili) {
             return createBiliBiliMediaSource(stream, streamInfo, dataSource, cacheKey, metadata);
-        }
-        if (streamInfo.getService() == ServiceList.NicoNico) {
-            return createNiconicoMediaSource(stream, dataSource, cacheKey, metadata);
         }
 
         final DeliveryMethod deliveryMethod = stream.getDeliveryMethod();
@@ -605,52 +590,12 @@ public interface PlaybackResolver extends Resolver<StreamInfo, MediaSource> {
                                 .build());
         }
     }
-
-    private static MediaSource createNiconicoMediaSource(final Stream stream,
-                                                         final PlayerDataSource dataSource,
-                                                         final String cacheKey,
-                                                         final MediaItemTag metadata)
-            throws ResolverException {
-        throwResolverExceptionIfUrlNullOrEmpty(stream.getContent());
-        final String sanitizedUrl = stripUriFragment(stream.getContent());
-        switch (stream.getDeliveryMethod()) {
-            case PROGRESSIVE_HTTP:
-                return dataSource.getNiconicoProgressiveMediaSourceFactory(stream.getContent())
-                        .createMediaSource(new MediaItem.Builder()
-                                .setTag(metadata)
-                                .setUri(Uri.parse(sanitizedUrl))
-                                .setCustomCacheKey(cacheKey)
-                                .build());
-            case HLS:
-                return dataSource.getNiconicoHlsMediaSourceFactory(stream.getContent())
-                        .createMediaSource(new MediaItem.Builder()
-                                .setTag(metadata)
-                                .setUri(Uri.parse(sanitizedUrl))
-                                .setCustomCacheKey(cacheKey)
-                                .build());
-            case DASH:
-                return buildDashMediaSource(dataSource, stream, cacheKey, metadata);
-            case SS:
-                return buildSSMediaSource(dataSource, stream, cacheKey, metadata);
-            default:
-                throw new ResolverException("Unsupported delivery method for NicoNico contents: "
-                        + stream.getDeliveryMethod());
-        }
-    }
     //endregion
 
 
     //region Utils
     private static Uri manifestUrlToUri(final String manifestUrl) {
         return Uri.parse(Objects.requireNonNullElse(manifestUrl, ""));
-    }
-
-    private static String stripUriFragment(final String url) {
-        final int fragmentIndex = url.indexOf('#');
-        if (fragmentIndex < 0) {
-            return url;
-        }
-        return url.substring(0, fragmentIndex);
     }
 
     private static void throwResolverExceptionIfUrlNullOrEmpty(@Nullable final String url)

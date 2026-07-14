@@ -348,14 +348,6 @@ public final class TextLinkifier {
                 continue;
             }
 
-            final LongPressClickableSpan[] existingSpans = spannableDescription.getSpans(
-                    timestampMatchDTO.timestampStart(),
-                    timestampMatchDTO.timestampEnd(),
-                    LongPressClickableSpan.class);
-            for (final LongPressClickableSpan existingSpan : existingSpans) {
-                spannableDescription.removeSpan(existingSpan);
-            }
-
             spannableDescription.setSpan(
                     new TimestampLongPressClickableSpan(context, descriptionText, disposables,
                             relatedInfoService, relatedStreamUrl, timestampMatchDTO),

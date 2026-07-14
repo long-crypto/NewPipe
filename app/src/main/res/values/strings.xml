@@ -143,13 +143,6 @@
     <string name="sort_bullet_comments">Bullet comments</string>
     <string name="sort_publish_time">Publish time</string>
     <string name="sort_overall">Overall</string>
-    <string name="sponsor_block">SponsorBlock</string>
-    <string name="sponsor_block_enable_title">Enable SponsorBlock</string>
-    <string name="sponsor_block_enable_summary">Automatically skip marked sponsor segments in supported services.</string>
-    <string name="sponsor_block_notifications_title">Show skip notifications</string>
-    <string name="sponsor_block_notifications_summary">Show a toast when SponsorBlock skips a segment.</string>
-    <string name="sponsor_block_api_url_default">https://sponsor.ajay.app</string>
-    <string name="sponsor_block_skip_toast">Skipped SponsorBlock segment</string>
     <string name="show_search_suggestions_title">Search suggestions</string>
     <string name="show_search_suggestions_summary">Choose the suggestions to show when searching</string>
     <string name="local_search_suggestions">Local search suggestions</string>
@@ -477,6 +470,7 @@
     <string name="recently_added">Recently added</string>
     <string name="most_liked">Most liked</string>
     <string name="conferences">Conferences</string>
+    <string name="recommended_lives">Recommended Lives</string>
     <!-- Play Queue -->
     <string name="title_activity_play_queue">Play queue</string>
     <string name="play_queue_remove">Remove</string>
@@ -801,7 +795,6 @@
 \nSo the choice boils down to what you prefer: speed or precise information.</string>
     <string name="feed_hide_streams_title">Show the following streams</string>
     <string name="feed_show_hide_streams">Show/Hide streams</string>
-    <string name="feed_filter_channels">Filter channels</string>
     <string name="feed_fetch_channel_tabs">Fetch channel tabs</string>
     <string name="feed_fetch_channel_tabs_summary">Tabs to fetch when updating the feed. This option has no effect if a channel is updated using fast mode.</string>
     <string name="content_not_supported">This content is not yet supported by NewPipe.\n\nIt will hopefully be supported in a future version.</string>

@@ -23,8 +23,6 @@ jobs:
         )
     steps:
       - uses: actions/checkout@v6
-        with:
-          submodules: recursive
       - name: Get backport metadata
         # the target branch is the first argument after `/backport`
         env:

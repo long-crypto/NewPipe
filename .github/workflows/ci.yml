@@ -38,12 +38,37 @@ jobs:
 
     steps:
       - uses: actions/checkout@v6
-        with:
-          submodules: recursive
+
+      - name: Checkout latest PipePipeExtractor source
+        run: |
+          set -euo pipefail
+          mkdir -p external
+          if [ ! -d external/NewPipeExtractor/.git ]; then
+            rm -rf external/NewPipeExtractor
+            git init external/NewPipeExtractor
+            git -C external/NewPipeExtractor remote add origin https://github.com/wizdom13/PipePipeExtractor
+          fi
+          git -C external/NewPipeExtractor fetch --depth 1 origin main
+          git -C external/NewPipeExtractor checkout --detach FETCH_HEAD
+
+      - name: Verify PipePipeExtractor source
+        run: |
+          git -C external/NewPipeExtractor remote -v
+          git -C external/NewPipeExtractor remote get-url origin | grep -q "github.com/wizdom13/PipePipeExtractor"
+          git -C external/NewPipeExtractor rev-parse HEAD
+          test -d external/NewPipeExtractor/extractor
+          grep -n "JavaLanguageVersion.of(21)" external/NewPipeExtractor/build.gradle
+          grep -n "options.release = 21" external/NewPipeExtractor/build.gradle
+
+      - name: Clean PipePipeExtractor outputs
+        run: |
+          rm -rf external/NewPipeExtractor/build
+          rm -rf external/NewPipeExtractor/extractor/build
+          rm -rf external/NewPipeExtractor/timeago-parser/build
+
       - uses: gradle/actions/wrapper-validation@v6
 
       - name: create and checkout branch
-        # push events already checked out the branch
         if: github.event_name == 'pull_request'
         env:
           BRANCH: ${{ github.head_ref }}
@@ -55,6 +80,16 @@ jobs:
           java-version: 21
           distribution: "temurin"
           cache: 'gradle'
+
+      - name: Verify PipePipeExtractor Java bytecode
+        run: |
+          ./gradlew -p external/NewPipeExtractor :extractor:clean :extractor:compileJava --stacktrace
+          javap -verbose -classpath external/NewPipeExtractor/extractor/build/classes/java/main org.schabi.newpipe.extractor.NewPipe | grep "major version: 65"
+
+      - name: Verify TabsJsonHelper nanojson compatibility
+        run: |
+          ! grep -R "has(JSON_TABS_ARRAY_KEY)" app/src/main/java app/src/test/java
+          grep -R "containsKey(JSON_TABS_ARRAY_KEY)" app/src/main/java/org/schabi/newpipe/settings/tabs/TabsJsonHelper.java
 
       - name: Build debug APK and run jvm tests
         run: ./gradlew assembleContinuous lintContinuous testDebugUnitTest --stacktrace -DskipFormatKtlint
@@ -83,8 +118,33 @@ jobs:
 
     steps:
       - uses: actions/checkout@v6
-        with:
-          submodules: recursive
+
+      - name: Checkout latest PipePipeExtractor source
+        run: |
+          set -euo pipefail
+          mkdir -p external
+          if [ ! -d external/NewPipeExtractor/.git ]; then
+            rm -rf external/NewPipeExtractor
+            git init external/NewPipeExtractor
+            git -C external/NewPipeExtractor remote add origin https://github.com/wizdom13/PipePipeExtractor
+          fi
+          git -C external/NewPipeExtractor fetch --depth 1 origin main
+          git -C external/NewPipeExtractor checkout --detach FETCH_HEAD
+
+      - name: Verify PipePipeExtractor source
+        run: |
+          git -C external/NewPipeExtractor remote -v
+          git -C external/NewPipeExtractor remote get-url origin | grep -q "github.com/wizdom13/PipePipeExtractor"
+          git -C external/NewPipeExtractor rev-parse HEAD
+          test -d external/NewPipeExtractor/extractor
+          grep -n "JavaLanguageVersion.of(21)" external/NewPipeExtractor/build.gradle
+          grep -n "options.release = 21" external/NewPipeExtractor/build.gradle
+
+      - name: Clean PipePipeExtractor outputs
+        run: |
+          rm -rf external/NewPipeExtractor/build
+          rm -rf external/NewPipeExtractor/extractor/build
+          rm -rf external/NewPipeExtractor/timeago-parser/build
 
       - name: Enable KVM
         run: |
@@ -107,7 +167,7 @@ jobs:
           arch: ${{ matrix.arch }}
           script: ./gradlew connectedCheck --stacktrace
 
-      - name: Upload test report when tests fail # because the printed out stacktrace (console) is too short, see also #7553
+      - name: Upload test report when tests fail
         uses: actions/upload-artifact@v7
         if: failure()
         with:
@@ -125,7 +185,6 @@ jobs:
       - uses: actions/checkout@v6
         with:
           fetch-depth: 0  # Shallow clones should be disabled for a better relevancy of analysis
-          submodules: recursive
 
       - name: Set up JDK
         uses: actions/setup-java@v5

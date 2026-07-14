@@ -47,6 +47,7 @@ import org.schabi.newpipe.local.feed.notifications.NotificationHelper;
 import org.schabi.newpipe.local.subscription.SubscriptionManager;
 import org.schabi.newpipe.util.ChannelTabHelper;
 import org.schabi.newpipe.util.Constants;
+import org.schabi.newpipe.util.ExtractorApiCompat;
 import org.schabi.newpipe.util.ExtractorHelper;
 import org.schabi.newpipe.util.Localization;
 import org.schabi.newpipe.util.NavigationHelper;
@@ -54,6 +55,7 @@ import org.schabi.newpipe.util.StateSaver;
 import org.schabi.newpipe.util.ThemeHelper;
 import org.schabi.newpipe.util.external_communication.ShareUtils;
 import org.schabi.newpipe.util.image.CoilHelper;
+import org.schabi.newpipe.util.image.ExtractorImageCompat;
 import org.schabi.newpipe.util.image.ImageStrategy;
 
 import java.util.List;
@@ -99,7 +101,6 @@ public class ChannelFragment extends BaseStateFragment<ChannelInfo>
 
     private MenuItem menuRssButton;
     private MenuItem menuNotifyButton;
-    private MenuItem menuSearchButton;
     private SubscriptionEntity channelSubscription;
     private MenuProvider menuProvider;
 
@@ -153,10 +154,8 @@ public class ChannelFragment extends BaseStateFragment<ChannelInfo>
 
                 @Override
                 public void onPrepareMenu(@NonNull final Menu menu) {
-                    menuSearchButton = menu.findItem(R.id.action_search);
                     menuRssButton = menu.findItem(R.id.menu_item_rss);
                     menuNotifyButton = menu.findItem(R.id.menu_item_notify);
-                    updateSearchButton();
                     updateRssButton();
                     updateNotifyButton(channelSubscription);
                 }
@@ -168,12 +167,6 @@ public class ChannelFragment extends BaseStateFragment<ChannelInfo>
                         final boolean value = !item.isChecked();
                         item.setEnabled(false);
                         setNotify(value);
-                    } else if (itemId == R.id.action_search) {
-                        if (currentInfo != null) {
-                            NavigationHelper.openSearchFragment(getFM(), currentInfo.getServiceId(),
-                                    "", currentInfo.getUrl(), currentInfo.getOriginalUrl(),
-                                    currentInfo.getName());
-                        }
                     } else if (itemId == R.id.action_settings) {
                         NavigationHelper.openSettings(requireContext());
                     } else if (itemId == R.id.menu_item_rss) {
@@ -367,7 +360,7 @@ public class ChannelFragment extends BaseStateFragment<ChannelInfo>
                 channel.setUrl(info.getUrl());
                 channel.setName(info.getName());
                 channel.setAvatarUrl(ImageStrategy.imageListToDbUrl(info.getAvatars()));
-                channel.setDescription(info.getDescription());
+                channel.setDescription(ExtractorApiCompat.descriptionText(info));
                 channel.setSubscriberCount(info.getSubscriberCount());
                 channelSubscription = null;
                 updateNotifyButton(null);
@@ -426,13 +419,6 @@ public class ChannelFragment extends BaseStateFragment<ChannelInfo>
         menuRssButton.setVisible(!TextUtils.isEmpty(currentInfo.getFeedUrl()));
     }
 
-    private void updateSearchButton() {
-        if (menuSearchButton == null) {
-            return;
-        }
-        menuSearchButton.setEnabled(currentInfo != null);
-    }
-
     private void updateNotifyButton(@Nullable final SubscriptionEntity subscription) {
         if (menuNotifyButton == null) {
             return;
@@ -485,8 +471,8 @@ public class ChannelFragment extends BaseStateFragment<ChannelInfo>
                     .getDefaultSharedPreferences(context);
 
             for (final ListLinkHandler linkHandler : currentInfo.getTabs()) {
-                final String tab = linkHandler.getContentFilters().get(0).getName();
-                if (ChannelTabHelper.showChannelTab(context, preferences, tab)) {
+                final String tab = ChannelTabHelper.getTabName(linkHandler);
+                if (tab != null && ChannelTabHelper.showChannelTab(context, preferences, tab)) {
                     final ChannelTabFragment channelTabFragment =
                             ChannelTabFragment.getInstance(serviceId, linkHandler, name);
                     channelTabFragment.useAsFrontPage(useAsFrontPage);
@@ -571,7 +557,6 @@ public class ChannelFragment extends BaseStateFragment<ChannelInfo>
         super.startLoading(forceLoad);
 
         currentInfo = null;
-        updateSearchButton();
         updateTabs();
         if (currentWorker != null) {
             currentWorker.dispose();
@@ -618,7 +603,7 @@ public class ChannelFragment extends BaseStateFragment<ChannelInfo>
 
         CoilHelper.INSTANCE.loadAvatar(binding.channelAvatarView, result.getAvatars());
         CoilHelper.INSTANCE.loadAvatar(binding.subChannelAvatarView,
-                result.getParentChannelAvatars());
+                ExtractorImageCompat.parentChannelAvatarImages(result));
 
         binding.channelTitleView.setText(result.getName());
         binding.channelSubscriberView.setVisibility(View.VISIBLE);
@@ -639,7 +624,6 @@ public class ChannelFragment extends BaseStateFragment<ChannelInfo>
         }
 
         updateRssButton();
-        updateSearchButton();
 
         channelContentNotSupported = false;
         for (final Throwable throwable : result.getErrors()) {

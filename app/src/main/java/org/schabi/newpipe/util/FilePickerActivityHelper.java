@@ -11,7 +11,6 @@ import android.view.ViewGroup;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import androidx.activity.OnBackPressedCallback;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.loader.content.Loader;
@@ -27,8 +26,6 @@ import java.io.File;
 
 public class FilePickerActivityHelper extends com.nononsenseapps.filepicker.FilePickerActivity {
     private CustomFilePickerFragment currentFragment;
-    @Nullable
-    private OnBackPressedCallback backPressedCallback;
 
     public static boolean isOwnFileUri(@NonNull final Context context, @NonNull final Uri uri) {
         if (uri.getAuthority() == null) {
@@ -45,42 +42,17 @@ public class FilePickerActivityHelper extends com.nononsenseapps.filepicker.File
             this.setTheme(R.style.FilePickerThemeDark);
         }
         super.onCreate(savedInstanceState);
-        backPressedCallback = new OnBackPressedCallback(false) {
-            @Override
-            public void handleOnBackPressed() {
-                handleBackPressed();
-            }
-        };
-        getOnBackPressedDispatcher().addCallback(this, backPressedCallback);
-        updateBackPressedCallbackState();
     }
 
-    private void handleBackPressed() {
+    @Override
+    public void onBackPressed() {
         // If at top most level, normal behaviour
-        if (currentFragment == null || currentFragment.isBackTop()) {
-            performDefaultBackNavigation();
+        if (currentFragment.isBackTop()) {
+            super.onBackPressed();
         } else {
             // Else go up
             currentFragment.goUp();
         }
-    }
-
-    @SuppressWarnings("deprecation")
-    private void performDefaultBackNavigation() {
-        if (backPressedCallback == null) {
-            FilePickerActivityHelper.super.onBackPressed();
-            return;
-        }
-
-        backPressedCallback.setEnabled(false);
-        FilePickerActivityHelper.super.onBackPressed();
-    }
-
-    private void updateBackPressedCallbackState() {
-        if (backPressedCallback == null) {
-            return;
-        }
-        backPressedCallback.setEnabled(currentFragment != null && !currentFragment.isBackTop());
     }
 
     @Override
@@ -170,10 +142,6 @@ public class FilePickerActivityHelper extends com.nononsenseapps.filepicker.File
                                    final SortedList<File> data) {
             super.onLoadFinished(loader, data);
             layoutManager.scrollToPosition(0);
-            final var activity = getActivity();
-            if (activity instanceof FilePickerActivityHelper) {
-                ((FilePickerActivityHelper) activity).updateBackPressedCallbackState();
-            }
         }
     }
 }

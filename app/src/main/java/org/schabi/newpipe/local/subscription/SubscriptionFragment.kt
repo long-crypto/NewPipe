@@ -43,16 +43,15 @@ import org.schabi.newpipe.local.subscription.item.FeedGroupAddNewItem
 import org.schabi.newpipe.local.subscription.item.FeedGroupCardGridItem
 import org.schabi.newpipe.local.subscription.item.FeedGroupCardItem
 import org.schabi.newpipe.local.subscription.item.FeedGroupCarouselItem
-import org.schabi.newpipe.local.subscription.item.FeedImportExportItem
 import org.schabi.newpipe.local.subscription.item.GroupsHeader
 import org.schabi.newpipe.local.subscription.item.Header
 import org.schabi.newpipe.local.subscription.item.ImportSubscriptionsHintPlaceholderItem
-import org.schabi.newpipe.settings.BackupRestoreSettingsFragment
 import org.schabi.newpipe.util.NavigationHelper
 import org.schabi.newpipe.util.OnClickGesture
 import org.schabi.newpipe.util.ServiceHelper
 import org.schabi.newpipe.util.ThemeHelper.getGridSpanCountChannels
 import org.schabi.newpipe.util.external_communication.ShareUtils
+import org.schabi.newpipe.util.image.ExtractorImageCompat
 
 class SubscriptionFragment : BaseStateFragment<SubscriptionState>() {
     private var _binding: FragmentSubscriptionBinding? = null
@@ -131,7 +130,7 @@ class SubscriptionFragment : BaseStateFragment<SubscriptionState>() {
         addMenuItemToSubmenu(importSubMenu, R.string.previous_export) { importExportHelper.onImportPreviousSelected() }
             .setIcon(R.drawable.ic_backup)
 
-        for (service in ServiceList.all()) {
+        for (service in ServiceHelper.getVisibleServices()) {
             val subscriptionExtractor = service.subscriptionExtractor ?: continue
 
             val supportedSources = subscriptionExtractor.supportedSources
@@ -180,18 +179,6 @@ class SubscriptionFragment : BaseStateFragment<SubscriptionState>() {
     private fun onImportFromServiceSelected(serviceId: Int) {
         val fragmentManager = fm
         NavigationHelper.openSubscriptionsImportFragment(fragmentManager, serviceId)
-    }
-
-    private fun onImportPreviousSelected() {
-        importExportHelper.onImportPreviousSelected()
-    }
-
-    private fun onBackupSelected() {
-        NavigationHelper.openSettings(requireContext(), BackupRestoreSettingsFragment::class.java)
-    }
-
-    private fun onExportSelected() {
-        importExportHelper.onExportSelected()
     }
 
     private fun openReorderDialog() {
@@ -281,19 +268,6 @@ class SubscriptionFragment : BaseStateFragment<SubscriptionState>() {
         subscriptionsSection.setHideWhenEmpty(true)
 
         groupAdapter.add(
-            Section().apply {
-                add(
-                    FeedImportExportItem(
-                        onImportPreviousSelected = ::onImportPreviousSelected,
-                        onImportFromServiceSelected = ::onImportFromServiceSelected,
-                        onBackupSelected = ::onBackupSelected,
-                        onExportSelected = ::onExportSelected
-                    )
-                )
-            }
-        )
-
-        groupAdapter.add(
             Section(
                 Header(getString(R.string.tab_subscriptions)),
                 listOf(subscriptionsSection)
@@ -318,7 +292,7 @@ class SubscriptionFragment : BaseStateFragment<SubscriptionState>() {
                     requireContext(),
                     selectedItem.name,
                     selectedItem.url,
-                    selectedItem.thumbnails
+                    ExtractorImageCompat.thumbnailImages(selectedItem)
                 )
 
                 1 -> ShareUtils.openUrlInBrowser(requireContext(), selectedItem.url)

@@ -25,11 +25,6 @@ import android.database.ContentObserver;
 import android.graphics.Color;
 import android.graphics.Rect;
 import android.net.Uri;
-import android.net.ConnectivityManager;
-import android.net.Network;
-import android.net.NetworkCapabilities;
-import android.net.NetworkRequest;
-import android.os.SystemClock;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
@@ -50,7 +45,6 @@ import android.widget.FrameLayout;
 import android.widget.RelativeLayout;
 import android.widget.Toast;
 
-import androidx.activity.OnBackPressedCallback;
 import androidx.annotation.AttrRes;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -60,10 +54,8 @@ import androidx.appcompat.content.res.AppCompatResources;
 import androidx.appcompat.widget.Toolbar;
 import androidx.coordinatorlayout.widget.CoordinatorLayout;
 import androidx.core.content.ContextCompat;
-import androidx.drawerlayout.widget.DrawerLayout;
 import androidx.fragment.app.Fragment;
 import androidx.preference.PreferenceManager;
-import androidx.viewpager.widget.ViewPager;
 
 import com.evernote.android.state.State;
 import com.google.android.exoplayer2.PlaybackException;
@@ -128,6 +120,7 @@ import org.schabi.newpipe.util.ThemeHelper;
 import org.schabi.newpipe.util.external_communication.KoreUtils;
 import org.schabi.newpipe.util.external_communication.ShareUtils;
 import org.schabi.newpipe.util.image.CoilHelper;
+import org.schabi.newpipe.util.image.ExtractorImageCompat;
 
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -136,10 +129,6 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
-import java.net.UnknownHostException;
-import java.net.SocketTimeoutException;
-import java.net.ConnectException;
-import java.io.EOFException;
 import java.util.function.Consumer;
 
 import coil3.util.CoilUtils;
@@ -173,12 +162,6 @@ public final class VideoDetailFragment
     private static final String RELATED_TAB_TAG = "NEXT VIDEO";
     private static final String DESCRIPTION_TAB_TAG = "DESCRIPTION TAB";
     private static final String EMPTY_TAB_TAG = "EMPTY TAB";
-    private static final long STREAM_INFO_REUSE_WINDOW_MILLIS =
-            TimeUnit.MINUTES.toMillis(2);
-
-    // Flag to avoid infinite refresh loops on playback error
-    private boolean attemptedRefreshOnError = false;
-
 
     // tabs
     private boolean showComments;
@@ -233,20 +216,10 @@ public final class VideoDetailFragment
     private final CompositeDisposable disposables = new CompositeDisposable();
     @Nullable
     private Disposable positionSubscriber = null;
-    @Nullable
-    private OnBackPressedCallback backPressedCallback;
 
     private BottomSheetBehavior<FrameLayout> bottomSheetBehavior;
     private BottomSheetBehavior.BottomSheetCallback bottomSheetCallback;
     private BroadcastReceiver broadcastReceiver;
-
-    // Network change handling for direct-link refresh
-    @Nullable
-    private ConnectivityManager connectivityManager;
-    @Nullable
-    private ConnectivityManager.NetworkCallback networkCallback;
-    private int lastNetworkTransport = -1; // -1 = unknown, -2 = other
-    private long lastNetworkRefreshMs = 0L;
 
     /*//////////////////////////////////////////////////////////////////////////
     // Views
@@ -355,7 +328,6 @@ public final class VideoDetailFragment
         prefs.registerOnSharedPreferenceChangeListener(preferenceChangeListener);
 
         setupBroadcastReceiver();
-        setupNetworkCallbacks();
 
         settingsContentObserver = new ContentObserver(new Handler()) {
             @Override
@@ -368,10 +340,6 @@ public final class VideoDetailFragment
         activity.getContentResolver().registerContentObserver(
                 Settings.System.getUriFor(Settings.System.ACCELEROMETER_ROTATION), false,
                 settingsContentObserver);
-
-        if (connectivityManager == null) {
-            connectivityManager = (ConnectivityManager) activity.getSystemService(Context.CONNECTIVITY_SERVICE);
-        }
     }
 
     @Override
@@ -420,7 +388,6 @@ public final class VideoDetailFragment
         if (wasLoading.getAndSet(false) && !wasCleared()) {
             startLoading(false);
         }
-        notifyBackPressHandlingChanged();
     }
 
     @Override
@@ -448,7 +415,6 @@ public final class VideoDetailFragment
                 .unregisterOnSharedPreferenceChangeListener(preferenceChangeListener);
         activity.unregisterReceiver(broadcastReceiver);
         activity.getContentResolver().unregisterContentObserver(settingsContentObserver);
-        teardownNetworkCallbacks();
 
         if (positionSubscriber != null) {
             positionSubscriber.dispose();
@@ -471,7 +437,6 @@ public final class VideoDetailFragment
     @Override
     public void onDestroyView() {
         super.onDestroyView();
-        backPressedCallback = null;
         binding = null;
     }
 
@@ -548,7 +513,7 @@ public final class VideoDetailFragment
         });
         binding.detailControlsShare.setOnClickListener(makeOnClickListener(info ->
                 ShareUtils.shareText(requireContext(), info.getName(), info.getUrl(),
-                        info.getThumbnails())));
+                        ExtractorImageCompat.thumbnailImages(info))));
         binding.detailControlsOpenInBrowser.setOnClickListener(makeOnClickListener(info ->
                 ShareUtils.openUrlInBrowser(requireContext(), info.getUrl())));
         binding.detailControlsPlayWithKodi.setOnClickListener(makeOnClickListener(info ->
@@ -657,34 +622,10 @@ public final class VideoDetailFragment
     @Override // called from onViewCreated in {@link BaseFragment#onViewCreated}
     protected void initViews(final View rootView, final Bundle savedInstanceState) {
         super.initViews(rootView, savedInstanceState);
-        backPressedCallback = new OnBackPressedCallback(false) {
-            @Override
-            public void handleOnBackPressed() {
-                if (!shouldHandleBackPress()) {
-                    setEnabled(false);
-                    try {
-                        requireActivity().getOnBackPressedDispatcher().onBackPressed();
-                    } finally {
-                        notifyBackPressHandlingChanged();
-                    }
-                    return;
-                }
-                onBackPressed();
-            }
-        };
-        requireActivity().getOnBackPressedDispatcher()
-                .addCallback(getViewLifecycleOwner(), backPressedCallback);
 
         pageAdapter = new TabAdapter(getChildFragmentManager());
         binding.viewPager.setAdapter(pageAdapter);
         binding.tabLayout.setupWithViewPager(binding.viewPager);
-        binding.viewPager.addOnPageChangeListener(new ViewPager.SimpleOnPageChangeListener() {
-            @Override
-            public void onPageSelected(final int position) {
-                selectedTabTag = pageAdapter.getItemTitle(position);
-                collapseToVideoIfCommentsTabSelected(position);
-            }
-        });
 
         binding.detailThumbnailRootLayout.requestFocus();
 
@@ -763,16 +704,6 @@ public final class VideoDetailFragment
     }
 
     @Override
-    public boolean canHandleBackPress() {
-        return isFullscreen()
-                || (isPlayerAvailable()
-                    && player.getPlayQueue() != null
-                    && player.videoPlayerSelected()
-                    && player.getPlayQueue().hasPrevious())
-                || stack.size() > 1;
-    }
-
-    @Override
     public boolean onBackPressed() {
         if (DEBUG) {
             Log.d(TAG, "onBackPressed() called");
@@ -785,7 +716,6 @@ public final class VideoDetailFragment
             }
             restoreDefaultOrientation();
             setAutoPlay(false);
-            notifyBackPressHandlingChanged();
             return true;
         }
 
@@ -794,7 +724,6 @@ public final class VideoDetailFragment
                 && player.getPlayQueue() != null
                 && player.videoPlayerSelected()
                 && player.getPlayQueue().previous()) {
-            notifyBackPressHandlingChanged();
             return true; // no code here, as previous() was used in the if
         }
 
@@ -808,33 +737,8 @@ public final class VideoDetailFragment
         stack.pop();
         // Get stack item from the new top
         setupFromHistoryItem(Objects.requireNonNull(stack.peek()));
-        notifyBackPressHandlingChanged();
 
         return true;
-    }
-
-    private void notifyBackPressHandlingChanged() {
-        if (backPressedCallback != null) {
-            backPressedCallback.setEnabled(shouldHandleBackPress());
-        }
-    }
-
-    private boolean shouldHandleBackPress() {
-        if (bottomSheetBehavior == null) {
-            return false;
-        }
-        final int state = bottomSheetBehavior.getState();
-        return !isMainDrawerOpen()
-                && state != BottomSheetBehavior.STATE_HIDDEN
-                && state != BottomSheetBehavior.STATE_COLLAPSED
-                && canHandleBackPress();
-    }
-
-    private boolean isMainDrawerOpen() {
-        final View navigationView = activity.findViewById(R.id.navigation);
-        return navigationView != null
-                && navigationView.getParent() instanceof DrawerLayout
-                && ((DrawerLayout) navigationView.getParent()).isDrawerOpen(navigationView);
     }
 
     private void setupFromHistoryItem(final StackItem item) {
@@ -854,8 +758,8 @@ public final class VideoDetailFragment
         // Update title, url, uploader from the last item in the stack (it's current now)
         final boolean isPlayerStopped = !isPlayerAvailable() || player.isStopped();
         if (playQueueItem != null && isPlayerStopped) {
-            updateOverlayData(playQueueItem.getTitle(),
-                    playQueueItem.getUploader(), playQueueItem.getThumbnails());
+            updateOverlayData(playQueueItem.getTitle(), playQueueItem.getUploader(),
+                    ExtractorImageCompat.thumbnailImages(playQueueItem));
         }
     }
 
@@ -886,28 +790,19 @@ public final class VideoDetailFragment
             player.disablePreloadingOfCurrentTrack();
         }
 
-        // Reuse very fresh stream info to avoid a full refetch on rapid reopens or poor
-        // networks, but drop older entries so playback URLs do not go stale.
-        if (newUrl != null
-                && InfoCache.getInstance().getInfoAgeMillis(
-                        newServiceId, newUrl, InfoCache.Type.STREAM)
-                > STREAM_INFO_REUSE_WINDOW_MILLIS) {
-            InfoCache.getInstance().removeInfo(newServiceId, newUrl, InfoCache.Type.STREAM);
-        }
         setInitialData(newServiceId, newUrl, newTitle, newQueue);
-        startLoading(true, true);
+        startLoading(false, true);
     }
 
     private void prepareAndHandleInfoIfNeededAfterDelay(final StreamInfo info,
                                                         final boolean scrollToTop,
                                                         final long delay) {
         new Handler(Looper.getMainLooper()).postDelayed(() -> {
-            final FragmentVideoDetailBinding viewBinding = binding;
-            if (activity == null || viewBinding == null) {
+            if (activity == null) {
                 return;
             }
             // Data can already be drawn, don't spend time twice
-            if (info.getName().equals(viewBinding.detailVideoTitleView.getText().toString())) {
+            if (info.getName().equals(binding.detailVideoTitleView.getText().toString())) {
                 return;
             }
             prepareAndHandleInfo(info, scrollToTop);
@@ -982,7 +877,6 @@ public final class VideoDetailFragment
                             if (stack.isEmpty() || !stack.peek().getPlayQueue()
                                     .equalStreams(playQueue)) {
                                 stack.push(new StackItem(serviceId, url, title, playQueue));
-                                notifyBackPressHandlingChanged();
                             }
                         }
 
@@ -1032,14 +926,11 @@ public final class VideoDetailFragment
         }
         pageAdapter.notifyDataSetUpdate();
 
-        if (pageAdapter.getCount() >= 1) {
+        if (pageAdapter.getCount() >= 2) {
             final int position = pageAdapter.getItemPositionByTitle(selectedTabTag);
             if (position != -1) {
                 binding.viewPager.setCurrentItem(position);
-                collapseToVideoIfCommentsTabSelected(position);
             }
-        }
-        if (pageAdapter.getCount() >= 2) {
             updateTabIconsAndContentDescriptions();
         }
         // the page adapter now contains tabs: show the tab layout
@@ -1098,23 +989,22 @@ public final class VideoDetailFragment
 
     public void updateTabLayoutVisibility() {
 
-        final FragmentVideoDetailBinding viewBinding = binding;
-        if (viewBinding == null) {
+        if (binding == null) {
             //If binding is null we do not need to and should not do anything with its object(s)
             return;
         }
 
-        if (pageAdapter.getCount() < 2 || viewBinding.viewPager.getVisibility() != View.VISIBLE) {
+        if (pageAdapter.getCount() < 2 || binding.viewPager.getVisibility() != View.VISIBLE) {
             // hide tab layout if there is only one tab or if the view pager is also hidden
-            viewBinding.tabLayout.setVisibility(View.GONE);
+            binding.tabLayout.setVisibility(View.GONE);
         } else {
             // call `post()` to be sure `viewPager.getHitRect()`
             // is up to date and not being currently recomputed
-            viewBinding.tabLayout.post(() -> {
+            binding.tabLayout.post(() -> {
                 final var activity = getActivity();
-                if (activity != null && binding == viewBinding) {
+                if (activity != null) {
                     final Rect pagerHitRect = new Rect();
-                    viewBinding.viewPager.getHitRect(pagerHitRect);
+                    binding.viewPager.getHitRect(pagerHitRect);
 
                     final int height = DeviceUtils.getWindowHeight(activity.getWindowManager());
                     final int viewPagerVisibleHeight = height - pagerHitRect.top;
@@ -1124,12 +1014,12 @@ public final class VideoDetailFragment
 
                     if (viewPagerVisibleHeight > tabLayoutHeight * 2) {
                         // no translation at all when viewPagerVisibleHeight > tabLayout.height * 3
-                        viewBinding.tabLayout.setTranslationY(
+                        binding.tabLayout.setTranslationY(
                                 Math.max(0, tabLayoutHeight * 3 - viewPagerVisibleHeight));
-                        viewBinding.tabLayout.setVisibility(View.VISIBLE);
+                        binding.tabLayout.setVisibility(View.VISIBLE);
                     } else {
                         // view pager is not visible enough
-                        viewBinding.tabLayout.setVisibility(View.GONE);
+                        binding.tabLayout.setVisibility(View.GONE);
                     }
                 }
             });
@@ -1137,31 +1027,9 @@ public final class VideoDetailFragment
     }
 
     public void scrollToTop() {
-        final FragmentVideoDetailBinding viewBinding = binding;
-        if (viewBinding == null) {
-            return;
-        }
-
-        viewBinding.appBarLayout.setExpanded(true, true);
+        binding.appBarLayout.setExpanded(true, true);
         // notify tab layout of scrolling
         updateTabLayoutVisibility();
-    }
-
-    private void collapseToVideoIfCommentsTabSelected(final int position) {
-        if (!COMMENTS_TAB_TAG.equals(pageAdapter.getItemTitle(position))) {
-            return;
-        }
-
-        final FragmentVideoDetailBinding viewBinding = binding;
-        if (viewBinding == null) {
-            return;
-        }
-
-        viewBinding.appBarLayout.post(() -> {
-            if (binding == viewBinding) {
-                viewBinding.appBarLayout.setExpanded(false, false);
-            }
-        });
     }
 
     public void scrollToComment(final CommentsInfoItem comment) {
@@ -1310,10 +1178,6 @@ public final class VideoDetailFragment
     }
 
     private void openMainPlayer() {
-        if (activity == null || !isAdded()) {
-            return;
-        }
-
         if (!isPlayerServiceAvailable()) {
             playerHolder.startService(autoPlayEnabled, this);
             return;
@@ -1361,43 +1225,9 @@ public final class VideoDetailFragment
             return new SinglePlayQueue(currentInfo);
         }
 
-        PlayQueue queue;
-        try {
-            if (currentInfo != null && currentInfo.getPartitions() != null
-                    && !currentInfo.getPartitions().isEmpty()) {
-                final var parts = currentInfo.getPartitions();
-                final String currentUrl = currentInfo.getOriginalUrl() != null
-                        ? currentInfo.getOriginalUrl()
-                        : currentInfo.getUrl();
-                int startIndex = 0;
-                // First try exact URL match
-                for (int i = 0; i < parts.size(); i++) {
-                    if (currentUrl != null && currentUrl.equals(parts.get(i).getUrl())) {
-                        startIndex = i;
-                        break;
-                    }
-                }
-                // Fallback: infer from "p" query parameter if available (BiliBili)
-                if (startIndex == 0 && currentUrl != null) {
-                    final int p;
-                    {
-                        int tmpP = -1;
-                        try {
-                            final String qp = Uri.parse(currentUrl).getQueryParameter("p");
-                            if (qp != null) tmpP = Integer.parseInt(qp);
-                        } catch (final NumberFormatException ignored) { }
-                        p = tmpP;
-                    }
-                    if (p >= 1 && p <= parts.size()) {
-                        startIndex = p - 1;
-                    }
-                }
-                queue = new SinglePlayQueue(parts, Math.max(0, Math.min(startIndex, parts.size() - 1)));
-            } else {
-                queue = new SinglePlayQueue(currentInfo);
-            }
-        } catch (Throwable t) {
-            // Defensive: fall back to single item queue on any error
+        PlayQueue queue = playQueue;
+        // Size can be 0 because queue removes bad stream automatically when error occurs
+        if (queue == null || queue.isEmpty()) {
             queue = new SinglePlayQueue(currentInfo);
         }
 
@@ -1545,8 +1375,6 @@ public final class VideoDetailFragment
                 new FrameLayout.LayoutParams(
                         RelativeLayout.LayoutParams.MATCH_PARENT, newHeight));
         binding.detailThumbnailImageView.setMinimumHeight(newHeight);
-        binding.detailThumbnailCollapsingLayout.setMinimumHeight(newHeight);
-        binding.detailThumbnailRootLayout.setMinimumHeight(newHeight);
         if (isPlayerAvailable()) {
             final int maxHeight = (int) (metrics.heightPixels * MAX_PLAYER_HEIGHT);
             player.UIs().get(VideoPlayerUi.class).ifPresent(ui ->
@@ -1782,12 +1610,13 @@ public final class VideoDetailFragment
 
         checkUpdateProgressInfo(info);
         CoilHelper.INSTANCE.loadDetailsThumbnail(binding.detailThumbnailImageView,
-                info.getThumbnails());
+                ExtractorImageCompat.thumbnailImages(info));
         showMetaInfoInTextView(info.getMetaInfo(), binding.detailMetaInfoTextView,
                 binding.detailMetaInfoSeparator, disposables);
 
         if (!isPlayerAvailable() || player.isStopped()) {
-            updateOverlayData(info.getName(), info.getUploaderName(), info.getThumbnails());
+            updateOverlayData(info.getName(), info.getUploaderName(),
+                    ExtractorImageCompat.thumbnailImages(info));
         }
 
         if (!info.getErrors().isEmpty()) {
@@ -1833,7 +1662,7 @@ public final class VideoDetailFragment
         }
 
         CoilHelper.INSTANCE.loadAvatar(binding.detailSubChannelThumbnailView,
-                info.getUploaderAvatars());
+                ExtractorImageCompat.uploaderAvatarImages(info));
         binding.detailSubChannelThumbnailView.setVisibility(View.VISIBLE);
         binding.detailUploaderThumbnailView.setVisibility(View.GONE);
     }
@@ -1868,7 +1697,7 @@ public final class VideoDetailFragment
                 info.getSubChannelAvatars());
         binding.detailSubChannelThumbnailView.setVisibility(View.VISIBLE);
         CoilHelper.INSTANCE.loadAvatar(binding.detailUploaderThumbnailView,
-                info.getUploaderAvatars());
+                ExtractorImageCompat.uploaderAvatarImages(info));
         binding.detailUploaderThumbnailView.setVisibility(View.VISIBLE);
     }
 
@@ -1977,7 +1806,6 @@ public final class VideoDetailFragment
             if (playQueueItem != null) {
                 stack.push(new StackItem(playQueueItem.getServiceId(), playQueueItem.getUrl(),
                         playQueueItem.getTitle(), queue));
-                notifyBackPressHandlingChanged();
                 return;
             } // else continue below
         }
@@ -1990,7 +1818,6 @@ public final class VideoDetailFragment
             // Without that the cached playQueue will have an old recovery position
             stackWithQueue.setPlayQueue(queue);
         }
-        notifyBackPressHandlingChanged();
     }
 
     @Override
@@ -2002,7 +1829,6 @@ public final class VideoDetailFragment
 
         switch (state) {
             case Player.STATE_PLAYING:
-                attemptedRefreshOnError = false;
                 if (binding.positionView.getAlpha() != 1.0f
                         && player.getPlayQueue() != null
                         && player.getPlayQueue().getItem() != null
@@ -2045,7 +1871,8 @@ public final class VideoDetailFragment
             return;
         }
 
-        updateOverlayData(info.getName(), info.getUploaderName(), info.getThumbnails());
+        updateOverlayData(info.getName(), info.getUploaderName(),
+                ExtractorImageCompat.thumbnailImages(info));
         if (currentInfo != null && info.getUrl().equals(currentInfo.getUrl())) {
             return;
         }
@@ -2061,11 +1888,6 @@ public final class VideoDetailFragment
 
     @Override
     public void onPlayerError(final PlaybackException error, final boolean isCatchableException) {
-        // Try a one-time refresh if this looks like an expired/invalid URL or a network switch
-        if (!attemptedRefreshOnError && (looksLikeLinkExpiry(error) || looksLikeNetworkChange(error))) {
-            tryRefreshStreamAndResume();
-            return;
-        }
         if (!isCatchableException) {
             // Properly exit from fullscreen
             toggleFullscreenIfInFullscreenMode();
@@ -2081,7 +1903,7 @@ public final class VideoDetailFragment
             if (currentInfo != null) {
                 updateOverlayData(currentInfo.getName(),
                         currentInfo.getUploaderName(),
-                        currentInfo.getThumbnails());
+                        ExtractorImageCompat.thumbnailImages(currentInfo));
             }
             updateOverlayPlayQueueButtonVisibility();
         }
@@ -2113,7 +1935,6 @@ public final class VideoDetailFragment
         scrollToTop();
 
         tryAddVideoPlayerView();
-        notifyBackPressHandlingChanged();
     }
 
     @Override
@@ -2658,7 +2479,6 @@ public final class VideoDetailFragment
                     case BottomSheetBehavior.STATE_HALF_EXPANDED:
                         break;
                 }
-                notifyBackPressHandlingChanged();
             }
 
             @Override
@@ -2668,7 +2488,6 @@ public final class VideoDetailFragment
         };
 
         bottomSheetBehavior.addBottomSheetCallback(bottomSheetCallback);
-        notifyBackPressHandlingChanged();
 
         // User opened a new page and the player will hide itself
         activity.getSupportFragmentManager().addOnBackStackChangedListener(() -> {
@@ -2757,101 +2576,5 @@ public final class VideoDetailFragment
                 && newState != BottomSheetBehavior.STATE_SETTLING) {
             lastStableBottomSheetState = newState;
         }
-    }
-
-
-    private boolean looksLikeLinkExpiry(final PlaybackException error) {
-        if (error == null) return false;
-        final String m = String.valueOf(error.getMessage()).toLowerCase();
-        return m.contains("403") || m.contains("expired") || m.contains("signature")
-                || m.contains("forbidden") || m.contains("invalid status")
-                || (m.contains("http") && (m.contains("404") || m.contains("410")));
-    }
-
-    private boolean looksLikeNetworkChange(final PlaybackException error) {
-        if (error == null) return false;
-        final Throwable cause = error.getCause();
-        if (cause == null) return false;
-        // Common connectivity exceptions observed on network switch
-        return (cause instanceof UnknownHostException)
-                || (cause instanceof SocketTimeoutException)
-                || (cause instanceof ConnectException)
-                || (cause instanceof EOFException);
-    }
-
-    private void setupNetworkCallbacks() {
-        if (activity == null) return;
-        if (connectivityManager == null) return;
-        if (networkCallback != null) return; // already set
-        final NetworkRequest request = new NetworkRequest.Builder()
-                .addCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
-                .addTransportType(NetworkCapabilities.TRANSPORT_WIFI)
-                .addTransportType(NetworkCapabilities.TRANSPORT_CELLULAR)
-                .build();
-        networkCallback = new ConnectivityManager.NetworkCallback() {
-            @Override public void onAvailable(@NonNull Network network) {
-                // no-op; wait for onCapabilitiesChanged to detect transport
-            }
-            @Override public void onCapabilitiesChanged(@NonNull Network network, @NonNull NetworkCapabilities caps) {
-                final int transport = caps.hasTransport(NetworkCapabilities.TRANSPORT_WIFI) ? NetworkCapabilities.TRANSPORT_WIFI
-                        : caps.hasTransport(NetworkCapabilities.TRANSPORT_CELLULAR) ? NetworkCapabilities.TRANSPORT_CELLULAR : -2;
-                if (transport != lastNetworkTransport) {
-                    lastNetworkTransport = transport;
-                    // Debounce refresh: avoid multiple immediate refreshes
-                    final long now = SystemClock.elapsedRealtime();
-                    if (now - lastNetworkRefreshMs > 1000) {
-                        lastNetworkRefreshMs = now;
-                        // If we are currently showing a video (and not hidden), refresh links
-                        if (isPlayerServiceAvailable() && url != null) {
-                            attemptedRefreshOnError = false; // allow one refresh
-                            tryRefreshStreamAndResume();
-                        }
-                    }
-                }
-            }
-        };
-        try {
-            connectivityManager.registerNetworkCallback(request, networkCallback);
-        } catch (Exception ignored) { }
-    }
-
-    private void teardownNetworkCallbacks() {
-        if (connectivityManager != null && networkCallback != null) {
-            try { connectivityManager.unregisterNetworkCallback(networkCallback); } catch (Exception ignored) { }
-            networkCallback = null;
-            lastNetworkTransport = -1;
-        }
-    }
-
-    private void tryRefreshStreamAndResume() {
-        // Force reload of current stream info and resume
-        if (url == null) return;
-        attemptedRefreshOnError = true;
-        if (binding != null) {
-            // Provide immediate UI feedback by showing loading state
-            showLoading();
-        }
-        // Clear InfoCache to ensure we don't reuse stale URLs on refresh
-        InfoCache.getInstance().removeInfo(serviceId, url, InfoCache.Type.STREAM);
-        currentWorker = org.schabi.newpipe.util.ExtractorHelper.getStreamInfo(serviceId, url, true)
-                .subscribeOn(Schedulers.io())
-                .observeOn(AndroidSchedulers.mainThread())
-                .subscribe(result -> {
-                    isLoading.set(false);
-                    currentInfo = result;
-                    // Rebuild play queue from fresh info and restart playback
-                    playQueue = setupPlayQueueForIntent(false);
-                    autoPlayEnabled = true;
-                    // Small delay to let network stabilize after transport switch
-                    new Handler(Looper.getMainLooper()).postDelayed(() -> {
-                        if (binding != null) {
-                            openMainPlayer();
-                        }
-                    }, 150);
-                }, throwable -> {
-                    // If refresh failed, fall back to default handling
-                    showError(new ErrorInfo(throwable, UserAction.REQUESTED_STREAM,
-                            url == null ? "no url" : url, serviceId, url));
-                });
     }
 }

@@ -9,7 +9,6 @@ import android.view.MenuItem;
 import android.view.View;
 import android.widget.EditText;
 
-import androidx.activity.OnBackPressedCallback;
 import androidx.annotation.IdRes;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -67,7 +66,6 @@ public class SettingsActivity extends AppCompatActivity implements
         PreferenceSearchResultListener {
     private static final String TAG = "SettingsActivity";
     private static final boolean DEBUG = MainActivity.DEBUG;
-    public static final String EXTRA_INITIAL_FRAGMENT = "initial_fragment";
 
     @IdRes
     private static final int FRAGMENT_HOLDER_ID = R.id.settings_fragment_holder;
@@ -79,8 +77,6 @@ public class SettingsActivity extends AppCompatActivity implements
 
     private View searchContainer;
     private EditText searchEditText;
-    @Nullable
-    private OnBackPressedCallback backPressedCallback;
 
     // State
     @State
@@ -96,13 +92,6 @@ public class SettingsActivity extends AppCompatActivity implements
         super.onCreate(savedInstanceBundle);
         Bridge.restoreInstanceState(this, savedInstanceBundle);
         final boolean restored = savedInstanceBundle != null;
-        backPressedCallback = new OnBackPressedCallback(false) {
-            @Override
-            public void handleOnBackPressed() {
-                handleBackPressed();
-            }
-        };
-        getOnBackPressedDispatcher().addCallback(this, backPressedCallback);
 
         final SettingsLayoutBinding settingsLayoutBinding =
                 SettingsLayoutBinding.inflate(getLayoutInflater());
@@ -120,21 +109,14 @@ public class SettingsActivity extends AppCompatActivity implements
                 }
             }
         } else {
-            final String initialFragmentClass =
-                    getIntent().getStringExtra(EXTRA_INITIAL_FRAGMENT);
-            final Fragment initialFragment =
-                    TextUtils.isEmpty(initialFragmentClass)
-                            ? new MainSettingsFragment()
-                            : instantiateFragment(initialFragmentClass);
             getSupportFragmentManager().beginTransaction()
-                    .replace(R.id.settings_fragment_holder, initialFragment)
+                    .replace(R.id.settings_fragment_holder, new MainSettingsFragment())
                     .commit();
         }
 
         if (DeviceUtils.isTv(this)) {
             FocusOverlayView.setupFocusObserver(this);
         }
-        updateBackPressedCallbackState();
     }
 
     @Override
@@ -154,23 +136,13 @@ public class SettingsActivity extends AppCompatActivity implements
         return super.onCreateOptionsMenu(menu);
     }
 
-    private void handleBackPressed() {
+    @Override
+    public void onBackPressed() {
         if (isSearchActive()) {
             setSearchActive(false);
             return;
         }
-        performDefaultBackNavigation();
-    }
-
-    @SuppressWarnings("deprecation")
-    private void performDefaultBackNavigation() {
-        if (backPressedCallback == null) {
-            SettingsActivity.super.onBackPressed();
-            return;
-        }
-
-        backPressedCallback.setEnabled(false);
-        SettingsActivity.super.onBackPressed();
+        super.onBackPressed();
     }
 
     @Override
@@ -350,7 +322,6 @@ public class SettingsActivity extends AppCompatActivity implements
         }
 
         resetSearchText();
-        updateBackPressedCallbackState();
     }
 
     private void hideSearchFragment() {
@@ -363,13 +334,6 @@ public class SettingsActivity extends AppCompatActivity implements
 
     private boolean isSearchActive() {
         return searchContainer.getVisibility() == View.VISIBLE;
-    }
-
-    private void updateBackPressedCallbackState() {
-        if (backPressedCallback == null || searchContainer == null) {
-            return;
-        }
-        backPressedCallback.setEnabled(isSearchActive());
     }
 
     private void onSearchChanged() {

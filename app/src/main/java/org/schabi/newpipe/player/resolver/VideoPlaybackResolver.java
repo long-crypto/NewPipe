@@ -25,7 +25,6 @@ import org.schabi.newpipe.util.ListHelper;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
 import java.util.Optional;
 
 import static com.google.android.exoplayer2.C.TIME_UNSET;
@@ -46,8 +45,6 @@ public class VideoPlaybackResolver implements PlaybackResolver {
 
     @Nullable
     private String playbackQuality;
-    @Nullable
-    private PlaybackQualitySelection playbackQualitySelection;
     @Nullable
     private String audioTrack;
 
@@ -89,15 +86,8 @@ public class VideoPlaybackResolver implements PlaybackResolver {
         } else if (playbackQuality == null) {
             videoIndex = qualityResolver.getDefaultResolutionIndex(videoStreamsList);
         } else {
-            final int selectedStreamIndex = playbackQualitySelection == null
-                    ? -1
-                    : findSelectedVideoStreamIndex(videoStreamsList, playbackQualitySelection);
-            if (selectedStreamIndex >= 0) {
-                videoIndex = selectedStreamIndex;
-            } else {
-                videoIndex = qualityResolver.getOverrideResolutionIndex(videoStreamsList,
-                        getPlaybackQuality());
-            }
+            videoIndex = qualityResolver.getOverrideResolutionIndex(videoStreamsList,
+                    getPlaybackQuality());
         }
 
         final int audioIndex =
@@ -195,17 +185,6 @@ public class VideoPlaybackResolver implements PlaybackResolver {
 
     public void setPlaybackQuality(@Nullable final String playbackQuality) {
         this.playbackQuality = playbackQuality;
-        playbackQualitySelection = null;
-    }
-
-    public void setPlaybackQuality(@Nullable final VideoStream videoStream) {
-        if (videoStream == null) {
-            setPlaybackQuality((String) null);
-            return;
-        }
-
-        playbackQuality = videoStream.getResolution();
-        playbackQualitySelection = PlaybackQualitySelection.from(videoStream);
     }
 
     @Nullable
@@ -221,71 +200,5 @@ public class VideoPlaybackResolver implements PlaybackResolver {
         int getDefaultResolutionIndex(List<VideoStream> sortedVideos);
 
         int getOverrideResolutionIndex(List<VideoStream> sortedVideos, String playbackQuality);
-    }
-
-    private static int findSelectedVideoStreamIndex(
-            @NonNull final List<VideoStream> videoStreams,
-            @NonNull final PlaybackQualitySelection selection
-    ) {
-        for (int i = 0; i < videoStreams.size(); i++) {
-            if (selection.matches(videoStreams.get(i))) {
-                return i;
-            }
-        }
-        return -1;
-    }
-
-    private static final class PlaybackQualitySelection {
-        @NonNull
-        private final String streamId;
-        private final int itag;
-        private final int formatId;
-        @NonNull
-        private final String resolution;
-        private final boolean videoOnly;
-        private final int bitrate;
-        private final int fps;
-        @NonNull
-        private final String codec;
-
-        private PlaybackQualitySelection(@NonNull final VideoStream videoStream) {
-            this.streamId = videoStream.getId();
-            this.itag = videoStream.getItag();
-            this.formatId = videoStream.getFormatId();
-            this.resolution = videoStream.getResolution();
-            this.videoOnly = videoStream.isVideoOnly();
-            this.bitrate = videoStream.getBitrate();
-            this.fps = videoStream.getFps();
-            this.codec = Objects.toString(videoStream.getCodec(), "");
-        }
-
-        @NonNull
-        private static PlaybackQualitySelection from(@NonNull final VideoStream videoStream) {
-            return new PlaybackQualitySelection(videoStream);
-        }
-
-        private boolean matches(@NonNull final VideoStream videoStream) {
-            if (!resolution.equals(videoStream.getResolution())
-                    || formatId != videoStream.getFormatId()
-                    || videoOnly != videoStream.isVideoOnly()) {
-                return false;
-            }
-            if (itag > 0 && videoStream.getItag() > 0 && itag != videoStream.getItag()) {
-                return false;
-            }
-            if (!streamId.trim().isEmpty() && !streamId.equals(videoStream.getId())) {
-                return false;
-            }
-            if (bitrate > 0 && videoStream.getBitrate() > 0
-                    && bitrate != videoStream.getBitrate()) {
-                return false;
-            }
-            if (fps > 0 && videoStream.getFps() > 0 && fps != videoStream.getFps()) {
-                return false;
-            }
-
-            final String videoCodec = Objects.toString(videoStream.getCodec(), "");
-            return codec.isEmpty() || videoCodec.isEmpty() || codec.equals(videoCodec);
-        }
     }
 }

@@ -72,6 +72,7 @@ import org.schabi.newpipe.util.DeviceUtils;
 import org.schabi.newpipe.util.NavigationHelper;
 import org.schabi.newpipe.util.external_communication.KoreUtils;
 import org.schabi.newpipe.util.external_communication.ShareUtils;
+import org.schabi.newpipe.util.image.ExtractorImageCompat;
 
 import java.util.Collections;
 import java.util.List;
@@ -743,7 +744,7 @@ public final class MainPlayerUi extends VideoPlayerUi implements View.OnLayoutCh
                     String videoUrl = player.getVideoUrl();
                     videoUrl += ("&t=" + seconds);
                     ShareUtils.shareText(context, currentItem.getTitle(),
-                            videoUrl, currentItem.getThumbnails());
+                            videoUrl, ExtractorImageCompat.thumbnailImages(currentItem));
                 }
             }
         };

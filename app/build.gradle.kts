@@ -229,7 +229,7 @@ dependencies {
     // NewPipe libraries
     implementation(projects.shared)
     implementation(libs.newpipe.nanojson)
-    implementation(project(":extractor"))
+    implementation(libs.newpipe.extractor)
     implementation(libs.newpipe.filepicker)
 
     // Checkstyle

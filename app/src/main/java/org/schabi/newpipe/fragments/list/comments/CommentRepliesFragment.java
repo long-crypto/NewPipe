@@ -19,18 +19,19 @@ import org.schabi.newpipe.databinding.CommentRepliesHeaderBinding;
 import org.schabi.newpipe.error.UserAction;
 import org.schabi.newpipe.extractor.ListExtractor;
 import org.schabi.newpipe.extractor.comments.CommentsInfoItem;
+import org.schabi.newpipe.extractor.stream.Description;
 import org.schabi.newpipe.fragments.list.BaseListInfoFragment;
 import org.schabi.newpipe.info_list.ItemViewMode;
-import org.schabi.newpipe.player.helper.PlayerHolder;
 import org.schabi.newpipe.util.CommentPictureHelper;
 import org.schabi.newpipe.util.DeviceUtils;
 import org.schabi.newpipe.util.ExtractorHelper;
 import org.schabi.newpipe.util.Localization;
 import org.schabi.newpipe.util.NavigationHelper;
 import org.schabi.newpipe.util.image.CoilHelper;
+import org.schabi.newpipe.util.image.ExtractorImageCompat;
 import org.schabi.newpipe.util.image.ImageStrategy;
-import org.schabi.newpipe.util.text.TextLinkifier;
 import org.schabi.newpipe.util.text.LongPressLinkMovementMethod;
+import org.schabi.newpipe.util.text.TextLinkifier;
 
 import java.util.Queue;
 import java.util.function.Supplier;
@@ -46,8 +47,6 @@ public final class CommentRepliesFragment
     @State
     CommentsInfoItem commentsInfoItem; // the comment to show replies of
     private final CompositeDisposable disposables = new CompositeDisposable();
-    @Nullable
-    private String relatedStreamUrl;
 
 
     /*//////////////////////////////////////////////////////////////////////////
@@ -75,13 +74,6 @@ public final class CommentRepliesFragment
     }
 
     @Override
-    protected void initViews(final View rootView, final Bundle savedInstanceState) {
-        relatedStreamUrl = PlayerHolder.getInstance().getCurrentUrl(commentsInfoItem.getServiceId());
-        infoListAdapter.setRelatedStreamUrl(relatedStreamUrl);
-        super.initViews(rootView, savedInstanceState);
-    }
-
-    @Override
     public void onDestroyView() {
         disposables.clear();
         super.onDestroyView();
@@ -95,7 +87,8 @@ public final class CommentRepliesFragment
             final CommentsInfoItem item = commentsInfoItem;
 
             // load the author avatar
-            CoilHelper.INSTANCE.loadAvatar(binding.authorAvatar, item.getUploaderAvatars());
+            CoilHelper.INSTANCE.loadAvatar(binding.authorAvatar,
+                    ExtractorImageCompat.uploaderAvatarImages(item));
             binding.authorAvatar.setVisibility(ImageStrategy.shouldLoadImages()
                     ? View.VISIBLE : View.GONE);
 
@@ -119,10 +112,10 @@ public final class CommentRepliesFragment
             binding.pinnedImage.setVisibility(item.isPinned() ? View.VISIBLE : View.GONE);
 
             // setup comment content
-            final String streamUrl = relatedStreamUrl != null ? relatedStreamUrl : item.getUrl();
-            TextLinkifier.fromDescription(binding.commentContent, item.getCommentText(),
+            TextLinkifier.fromDescription(binding.commentContent,
+                    new Description(item.getCommentText(), Description.PLAIN_TEXT),
                     HtmlCompat.FROM_HTML_MODE_LEGACY, getServiceById(item.getServiceId()),
-                    streamUrl, disposables, null);
+                    item.getUrl(), disposables, null);
             binding.commentContent.setMovementMethod(LongPressLinkMovementMethod.getInstance());
             CommentPictureHelper.bindCommentPictures(
                     binding.commentPicturesScrollView,

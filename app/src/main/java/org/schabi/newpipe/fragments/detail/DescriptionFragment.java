@@ -17,7 +17,9 @@ import org.schabi.newpipe.R;
 import org.schabi.newpipe.extractor.StreamingService;
 import org.schabi.newpipe.extractor.stream.Description;
 import org.schabi.newpipe.extractor.stream.StreamInfo;
+import org.schabi.newpipe.util.ExtractorApiCompat;
 import org.schabi.newpipe.util.Localization;
+import org.schabi.newpipe.util.image.ExtractorImageCompat;
 
 import java.util.List;
 
@@ -37,8 +39,8 @@ public class DescriptionFragment extends BaseDescriptionFragment {
 
     @Nullable
     @Override
-    protected Description getDescription() {
-        return streamInfo.getDescription();
+    protected Description displayDescription() {
+        return ExtractorApiCompat.description(streamInfo);
     }
 
     @NonNull
@@ -102,9 +104,9 @@ public class DescriptionFragment extends BaseDescriptionFragment {
                 streamInfo.getHost());
 
         addImagesMetadataItem(inflater, layout, R.string.metadata_thumbnails,
-                streamInfo.getThumbnails());
+                ExtractorImageCompat.thumbnailImages(streamInfo));
         addImagesMetadataItem(inflater, layout, R.string.metadata_uploader_avatars,
-                streamInfo.getUploaderAvatars());
+                ExtractorImageCompat.uploaderAvatarImages(streamInfo));
         addImagesMetadataItem(inflater, layout, R.string.metadata_subchannel_avatars,
                 streamInfo.getSubChannelAvatars());
     }

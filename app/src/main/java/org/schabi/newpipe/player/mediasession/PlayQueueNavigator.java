@@ -21,6 +21,7 @@ import org.schabi.newpipe.player.Player;
 import org.schabi.newpipe.player.playqueue.PlayQueue;
 import org.schabi.newpipe.player.playqueue.PlayQueueItem;
 import org.schabi.newpipe.util.image.ImageStrategy;
+import org.schabi.newpipe.util.image.ExtractorImageCompat;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -139,8 +140,8 @@ public class PlayQueueNavigator implements MediaSessionConnector.QueueNavigator 
         descBuilder.setExtras(additionalMetadata);
 
         try {
-            descBuilder.setIconUri(Uri.parse(
-                    ImageStrategy.choosePreferredImage(item.getThumbnails())));
+            descBuilder.setIconUri(Uri.parse(ImageStrategy.choosePreferredImage(
+                    ExtractorImageCompat.thumbnailImages(item))));
         } catch (final Throwable e) {
             // no thumbnail available at all, or the user disabled image loading,
             // or the obtained url is not a valid `Uri`

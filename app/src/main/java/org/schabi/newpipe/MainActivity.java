@@ -44,7 +44,6 @@ import android.widget.ArrayAdapter;
 import android.widget.FrameLayout;
 import android.widget.Spinner;
 
-import androidx.activity.OnBackPressedCallback;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.ActionBar;
@@ -116,8 +115,6 @@ public class MainActivity extends AppCompatActivity {
     private ToolbarLayoutBinding toolbarLayoutBinding;
 
     private ActionBarDrawerToggle toggle;
-    @Nullable
-    private OnBackPressedCallback backPressedCallback;
 
     private boolean servicesShown = false;
 
@@ -168,15 +165,6 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
         sharedPrefEditor = sharedPreferences.edit();
-        backPressedCallback = new OnBackPressedCallback(false) {
-            @Override
-            public void handleOnBackPressed() {
-                handleBackPressed();
-            }
-        };
-        getOnBackPressedDispatcher().addCallback(this, backPressedCallback);
-        getSupportFragmentManager().addOnBackStackChangedListener(
-                this::updateBackPressedCallbackState);
 
         mainBinding = ActivityMainBinding.inflate(getLayoutInflater());
         drawerLayoutBinding = mainBinding.drawerLayout;
@@ -184,22 +172,8 @@ public class MainActivity extends AppCompatActivity {
                 .getHeaderView(0));
         toolbarLayoutBinding = mainBinding.toolbarLayout;
         setContentView(mainBinding.getRoot());
-        BottomSheetBehavior.from(mainBinding.fragmentPlayerHolder)
-                .addBottomSheetCallback(new BottomSheetBehavior.BottomSheetCallback() {
-                    @Override
-                    public void onStateChanged(@NonNull final View bottomSheet,
-                                               final int newState) {
-                        updateBackPressedCallbackState();
-                    }
 
-                    @Override
-                    public void onSlide(@NonNull final View bottomSheet,
-                                        final float slideOffset) {
-                        // no-op
-                    }
-                });
-
-        if (getSupportFragmentManager().findFragmentById(R.id.fragment_holder) == null) {
+        if (getSupportFragmentManager().getBackStackEntryCount() == 0) {
             initFragments();
         }
 
@@ -234,7 +208,6 @@ public class MainActivity extends AppCompatActivity {
         }
 
         MigrationManager.showUserInfoIfPresent(this);
-        mainBinding.getRoot().post(this::updateBackPressedCallbackState);
     }
 
     @Override
@@ -278,7 +251,6 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onDrawerOpened(final View drawerView) {
                 lastService = ServiceHelper.getSelectedServiceId(MainActivity.this);
-                updateBackPressedCallbackState();
             }
 
             @Override
@@ -289,7 +261,6 @@ public class MainActivity extends AppCompatActivity {
                 if (lastService != ServiceHelper.getSelectedServiceId(MainActivity.this)) {
                     ActivityCompat.recreate(MainActivity.this);
                 }
-                updateBackPressedCallbackState();
             }
         });
 
@@ -327,11 +298,11 @@ public class MainActivity extends AppCompatActivity {
 
         int kioskMenuItemId = 0;
 
-        for (final String ks : service.getKioskList().getAvailableKiosks()) {
+        for (final String kioskId : getDrawerKioskIds(service)) {
             drawerLayoutBinding.navigation.getMenu()
                     .add(R.id.menu_kiosks_group, kioskMenuItemId, 0, KioskTranslator
-                            .getTranslatedKioskName(ks, this))
-                    .setIcon(KioskTranslator.getKioskIcon(ks));
+                            .getTranslatedKioskName(kioskId, this))
+                    .setIcon(KioskTranslator.getKioskIcon(kioskId));
             kioskMenuItemId++;
         }
 
@@ -386,9 +357,7 @@ public class MainActivity extends AppCompatActivity {
                 NavigationHelper.openSubscriptionFragment(getSupportFragmentManager());
                 break;
             case ITEM_ID_FEED:
-                if (!trySelectFeedTabInMainFragment()) {
-                    NavigationHelper.openFeedFragment(getSupportFragmentManager());
-                }
+                NavigationHelper.openFeedFragment(getSupportFragmentManager());
                 break;
             case ITEM_ID_BOOKMARKS:
                 NavigationHelper.openBookmarksFragment(getSupportFragmentManager());
@@ -402,18 +371,10 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    private boolean trySelectFeedTabInMainFragment() {
-        final FragmentManager fm = getSupportFragmentManager();
-        NavigationHelper.gotoMainFragment(fm);
-        fm.executePendingTransactions();
-        final Fragment fragment = fm.findFragmentById(R.id.fragment_holder);
-        return fragment instanceof MainFragment && ((MainFragment) fragment).selectFeedTab();
-    }
-
     private void kioskSelected(final MenuItem item) throws ExtractionException {
         final StreamingService currentService = ServiceHelper.getSelectedService(this);
         int kioskMenuItemId = 0;
-        for (final String kioskId : currentService.getKioskList().getAvailableKiosks()) {
+        for (final String kioskId : getDrawerKioskIds(currentService)) {
             if (kioskMenuItemId == item.getItemId()) {
                 NavigationHelper.openKioskFragment(getSupportFragmentManager(),
                         currentService.getServiceId(), kioskId);
@@ -421,6 +382,20 @@ public class MainActivity extends AppCompatActivity {
             }
             kioskMenuItemId++;
         }
+    }
+
+    /**
+     * Returns every kiosk advertised by the selected streaming service in extractor order. The
+     * drawer item IDs are assigned from this same list both when building and selecting menu
+     * entries, so the selection index stays aligned with the visible drawer rows.
+     *
+     * @param service selected streaming service used to build drawer kiosk entries
+     * @return all available kiosk IDs to show in the drawer
+     * @throws ExtractionException if kiosk metadata cannot be loaded
+     */
+    private List<String> getDrawerKioskIds(final StreamingService service)
+            throws ExtractionException {
+        return new ArrayList<>(service.getKioskList().getAvailableKiosks());
     }
 
     private void optionsAboutSelected(final MenuItem item) {
@@ -479,7 +454,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void showServices() {
-        for (final StreamingService s : NewPipe.getServices()) {
+        for (final StreamingService s : ServiceHelper.getVisibleServices()) {
             final String title = s.getServiceInfo().getName();
 
             final MenuItem menuItem = drawerLayoutBinding.navigation.getMenu()
@@ -633,14 +608,17 @@ public class MainActivity extends AppCompatActivity {
         return super.onKeyDown(keyCode, event);
     }
 
-    private void handleBackPressed() {
+    @Override
+    public void onBackPressed() {
         if (DEBUG) {
             Log.d(TAG, "onBackPressed() called");
         }
 
-        if (mainBinding.getRoot().isDrawerOpen(drawerLayoutBinding.navigation)) {
-            mainBinding.getRoot().closeDrawers();
-            return;
+        if (DeviceUtils.isTv(this)) {
+            if (mainBinding.getRoot().isDrawerOpen(drawerLayoutBinding.navigation)) {
+                mainBinding.getRoot().closeDrawers();
+                return;
+            }
         }
 
         // In case bottomSheet is not visible on the screen or collapsed we can assume that the user
@@ -649,14 +627,19 @@ public class MainActivity extends AppCompatActivity {
         if (bottomSheetHiddenOrCollapsed()) {
             final FragmentManager fm = getSupportFragmentManager();
             final Fragment fragment = fm.findFragmentById(R.id.fragment_holder);
-            if (fragment instanceof CommentRepliesFragment) {
+            // If current fragment implements BackPressable (i.e. can/wanna handle back press)
+            // delegate the back press to it
+            if (fragment instanceof BackPressable) {
+                if (((BackPressable) fragment).onBackPressed()) {
+                    return;
+                }
+            } else if (fragment instanceof CommentRepliesFragment) {
                 // expand DetailsFragment if CommentRepliesFragment was opened
                 // to show the top level comments again
                 // Expand DetailsFragment if CommentRepliesFragment was opened
                 // and no other CommentRepliesFragments are on top of the back stack
                 // to show the top level comments again.
-                openDetailFragmentFromCommentReplies(fm, true);
-                return;
+                openDetailFragmentFromCommentReplies(fm, false);
             }
 
         } else {
@@ -676,40 +659,8 @@ public class MainActivity extends AppCompatActivity {
         if (getSupportFragmentManager().getBackStackEntryCount() == 1) {
             finish();
         } else {
-            performDefaultBackNavigation();
+            super.onBackPressed();
         }
-    }
-
-    @SuppressWarnings("deprecation")
-    private void performDefaultBackNavigation() {
-        if (backPressedCallback == null) {
-            MainActivity.super.onBackPressed();
-            return;
-        }
-
-        backPressedCallback.setEnabled(false);
-        MainActivity.super.onBackPressed();
-    }
-
-    private void updateBackPressedCallbackState() {
-        if (backPressedCallback == null || mainBinding == null) {
-            return;
-        }
-        backPressedCallback.setEnabled(shouldInterceptBackPress());
-    }
-
-    private boolean shouldInterceptBackPress() {
-        if (mainBinding.getRoot().isDrawerOpen(drawerLayoutBinding.navigation)) {
-            return true;
-        }
-
-        if (!bottomSheetHiddenOrCollapsed()) {
-            return true;
-        }
-
-        final Fragment fragment = getSupportFragmentManager()
-                .findFragmentById(R.id.fragment_holder);
-        return fragment instanceof CommentRepliesFragment;
     }
 
     @Override
@@ -831,7 +782,7 @@ public class MainActivity extends AppCompatActivity {
             // When user watch a video inside popup and then tries to open the video in main player
             // while the app is closed he will see a blank fragment on place of kiosk.
             // Let's open it first
-            if (getSupportFragmentManager().findFragmentById(R.id.fragment_holder) == null) {
+            if (getSupportFragmentManager().getBackStackEntryCount() == 0) {
                 NavigationHelper.openMainFragment(getSupportFragmentManager());
             }
 

@@ -64,8 +64,6 @@ import org.schabi.newpipe.App;
 import org.schabi.newpipe.R;
 import org.schabi.newpipe.databinding.PlayerBinding;
 import org.schabi.newpipe.extractor.MediaFormat;
-import org.schabi.newpipe.extractor.bulletComments.BulletCommentsInfo;
-import org.schabi.newpipe.extractor.bulletComments.BulletCommentsInfoItem;
 import org.schabi.newpipe.extractor.stream.AudioStream;
 import org.schabi.newpipe.extractor.stream.StreamInfo;
 import org.schabi.newpipe.extractor.stream.VideoStream;
@@ -82,26 +80,18 @@ import org.schabi.newpipe.player.playqueue.PlayQueueItem;
 import org.schabi.newpipe.player.seekbarpreview.SeekbarPreviewThumbnailHelper;
 import org.schabi.newpipe.player.seekbarpreview.SeekbarPreviewThumbnailHolder;
 import org.schabi.newpipe.util.DeviceUtils;
-import org.schabi.newpipe.util.ExtractorHelper;
-import org.schabi.newpipe.util.ListHelper;
 import org.schabi.newpipe.util.Localization;
 import org.schabi.newpipe.util.NavigationHelper;
-import org.schabi.newpipe.util.SponsorBlockHelper;
 import org.schabi.newpipe.util.ThemeHelper;
 import org.schabi.newpipe.util.external_communication.KoreUtils;
 import org.schabi.newpipe.util.external_communication.ShareUtils;
-import org.schabi.newpipe.views.MarkableSeekBar;
 import org.schabi.newpipe.views.player.PlayerFastSeekOverlay;
+import org.schabi.newpipe.util.image.ExtractorImageCompat;
 
-import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
-
-import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers;
-import io.reactivex.rxjava3.disposables.CompositeDisposable;
-import io.reactivex.rxjava3.schedulers.Schedulers;
 
 public abstract class VideoPlayerUi extends PlayerUi implements SeekBar.OnSeekBarChangeListener,
         PopupMenu.OnMenuItemClickListener, PopupMenu.OnDismissListener {
@@ -159,12 +149,6 @@ public abstract class VideoPlayerUi extends PlayerUi implements SeekBar.OnSeekBa
     @NonNull
     private final SeekbarPreviewThumbnailHolder seekbarPreviewThumbnailHolder =
             new SeekbarPreviewThumbnailHolder();
-    @NonNull
-    private final CompositeDisposable bulletCommentsDisposable = new CompositeDisposable();
-    @NonNull
-    private List<BulletCommentsInfoItem> bulletComments = Collections.emptyList();
-    private int nextBulletCommentIndex = 0;
-    private long lastBulletCommentPosition = -1L;
 
 
     /*//////////////////////////////////////////////////////////////////////////
@@ -253,7 +237,8 @@ public abstract class VideoPlayerUi extends PlayerUi implements SeekBar.OnSeekBa
             final PlayQueueItem currentItem = player.getCurrentItem();
             if (currentItem != null) {
                 ShareUtils.shareText(context, currentItem.getTitle(),
-                        player.getVideoUrlAtCurrentTime(), currentItem.getThumbnails());
+                        player.getVideoUrlAtCurrentTime(),
+                        ExtractorImageCompat.thumbnailImages(currentItem));
             }
         }));
         binding.share.setOnLongClickListener(v -> {
@@ -444,8 +429,6 @@ public abstract class VideoPlayerUi extends PlayerUi implements SeekBar.OnSeekBa
     @Override
     public void destroy() {
         super.destroy();
-        clearBulletComments();
-        bulletCommentsDisposable.clear();
         binding.endScreen.setImageDrawable(null);
         deinitPlayerSeekOverlay();
         deinitListeners();
@@ -567,7 +550,6 @@ public abstract class VideoPlayerUi extends PlayerUi implements SeekBar.OnSeekBa
                     + "duration = [" + duration + "], bufferPercent = [" + bufferPercent + "]");
         }
         binding.playbackLiveSync.setClickable(!player.isLiveEdge());
-        maybeShowBulletComments(currentProgress);
     }
 
     /**
@@ -834,7 +816,6 @@ public abstract class VideoPlayerUi extends PlayerUi implements SeekBar.OnSeekBa
     @Override
     public void onBlocked() {
         super.onBlocked();
-        binding.bulletCommentsOverlay.reset();
 
         // if we are e.g. switching players, hide controls
         hideControls(DEFAULT_CONTROLS_DURATION, 0);
@@ -887,7 +868,6 @@ public abstract class VideoPlayerUi extends PlayerUi implements SeekBar.OnSeekBa
     @Override
     public void onPaused() {
         super.onPaused();
-        binding.bulletCommentsOverlay.reset();
 
         // Don't let UI elements popup during double tap seeking. This state is entered sometimes
         // during seeking/loading. This if-else check ensures that the controls aren't popping up.
@@ -912,14 +892,12 @@ public abstract class VideoPlayerUi extends PlayerUi implements SeekBar.OnSeekBa
     public void onPausedSeek() {
         super.onPausedSeek();
         animatePlayButtons(false, 100);
-        binding.bulletCommentsOverlay.reset();
         binding.getRoot().setKeepScreenOn(true);
     }
 
     @Override
     public void onCompleted() {
         super.onCompleted();
-        binding.bulletCommentsOverlay.reset();
 
         animate(binding.playPauseButton, false, 0, AnimationType.SCALE_AND_ALPHA, 0,
                 () -> {
@@ -1069,90 +1047,6 @@ public abstract class VideoPlayerUi extends PlayerUi implements SeekBar.OnSeekBa
         binding.channelTextView.setText(info.getUploaderName());
 
         this.seekbarPreviewThumbnailHolder.resetFrom(player.getContext(), info.getPreviewFrames());
-        SponsorBlockHelper.markSegments(
-                player.getContext(), (MarkableSeekBar) binding.playbackSeekBar, info);
-        loadBulletComments(info);
-    }
-
-    private void loadBulletComments(@NonNull final StreamInfo info) {
-        clearBulletComments();
-        bulletCommentsDisposable.clear();
-
-        bulletCommentsDisposable.add(
-                ExtractorHelper.getBulletCommentsInfo(info.getServiceId(), info.getUrl(), true)
-                        .subscribeOn(Schedulers.io())
-                        .observeOn(AndroidSchedulers.mainThread())
-                        .subscribe(
-                                bulletCommentsInfo -> onBulletCommentsLoaded(info,
-                                        bulletCommentsInfo),
-                                throwable -> binding.bulletCommentsOverlay.setVisibility(
-                                        View.GONE)));
-    }
-
-    private void onBulletCommentsLoaded(@NonNull final StreamInfo info,
-                                        @Nullable final BulletCommentsInfo bulletCommentsInfo) {
-        if (bulletCommentsInfo == null || bulletCommentsInfo.getRelatedItems() == null
-                || bulletCommentsInfo.getRelatedItems().isEmpty() || info.getDuration() <= 0) {
-            binding.bulletCommentsOverlay.setVisibility(View.GONE);
-            return;
-        }
-
-        bulletComments = bulletCommentsInfo.getRelatedItems()
-                .stream()
-                .filter(item -> item.getDuration() != null)
-                .sorted()
-                .collect(Collectors.toList());
-        nextBulletCommentIndex = 0;
-        lastBulletCommentPosition = -1L;
-        binding.bulletCommentsOverlay.setVisibility(View.VISIBLE);
-    }
-
-    private void maybeShowBulletComments(final int currentProgress) {
-        if (bulletComments.isEmpty()) {
-            return;
-        }
-
-        if (lastBulletCommentPosition > currentProgress + Player.PROGRESS_LOOP_INTERVAL_MILLIS) {
-            binding.bulletCommentsOverlay.reset();
-            nextBulletCommentIndex = findFirstBulletCommentIndexAtOrAfter(currentProgress);
-        }
-
-        while (nextBulletCommentIndex < bulletComments.size()) {
-            final BulletCommentsInfoItem item = bulletComments.get(nextBulletCommentIndex);
-            final long scheduledTimeMillis = item.getDuration().toMillis();
-            if (scheduledTimeMillis > currentProgress) {
-                break;
-            }
-            if (scheduledTimeMillis > lastBulletCommentPosition) {
-                binding.bulletCommentsOverlay.showBulletComment(item);
-            }
-            nextBulletCommentIndex++;
-        }
-
-        lastBulletCommentPosition = currentProgress;
-    }
-
-    private int findFirstBulletCommentIndexAtOrAfter(final int currentProgress) {
-        int left = 0;
-        int right = bulletComments.size();
-        while (left < right) {
-            final int middle = (left + right) / 2;
-            final long scheduledTimeMillis = bulletComments.get(middle).getDuration().toMillis();
-            if (scheduledTimeMillis < currentProgress) {
-                left = middle + 1;
-            } else {
-                right = middle;
-            }
-        }
-        return left;
-    }
-
-    private void clearBulletComments() {
-        bulletComments = Collections.emptyList();
-        nextBulletCommentIndex = 0;
-        lastBulletCommentPosition = -1L;
-        binding.bulletCommentsOverlay.reset();
-        binding.bulletCommentsOverlay.setVisibility(View.GONE);
     }
 
     private void updateStreamRelatedViews() {
@@ -1223,8 +1117,11 @@ public abstract class VideoPlayerUi extends PlayerUi implements SeekBar.OnSeekBa
         }
         qualityPopupMenu.getMenu().removeGroup(POPUP_MENU_ID_QUALITY);
 
-        final List<VideoStream> availableStreams = getAvailableVideoStreams();
-        if (availableStreams.isEmpty()) {
+        final List<VideoStream> availableStreams = Optional.ofNullable(player.getCurrentMetadata())
+                .flatMap(MediaItemTag::getMaybeQuality)
+                .map(MediaItemTag.Quality::getSortedVideoStreams)
+                .orElse(null);
+        if (availableStreams == null) {
             return;
         }
 
@@ -1236,13 +1133,8 @@ public abstract class VideoPlayerUi extends PlayerUi implements SeekBar.OnSeekBa
         qualityPopupMenu.setOnMenuItemClickListener(this);
         qualityPopupMenu.setOnDismissListener(this);
 
-        final int selectedStreamIndex = getSelectedVideoStreamIndex(availableStreams);
-        if (selectedStreamIndex >= 0) {
-            binding.qualityTextView.setText(availableStreams.get(selectedStreamIndex)
-                    .getResolution());
-        } else {
-            binding.qualityTextView.setText(availableStreams.get(0).getResolution());
-        }
+        player.getSelectedVideoStream()
+                .ifPresent(s -> binding.qualityTextView.setText(s.getResolution()));
     }
 
     private void buildAudioTrackMenu() {
@@ -1416,48 +1308,22 @@ public abstract class VideoPlayerUi extends PlayerUi implements SeekBar.OnSeekBa
 
     private void onQualityItemClick(@NonNull final MenuItem menuItem) {
         final int menuItemIndex = menuItem.getItemId();
-        final List<VideoStream> availableStreams = getAvailableVideoStreams();
-        final int selectedStreamIndex = getSelectedVideoStreamIndex(availableStreams);
+        @Nullable final MediaItemTag currentMetadata = player.getCurrentMetadata();
+        if (currentMetadata == null || currentMetadata.getMaybeQuality().isEmpty()) {
+            return;
+        }
+
+        final MediaItemTag.Quality quality = currentMetadata.getMaybeQuality().get();
+        final List<VideoStream> availableStreams = quality.getSortedVideoStreams();
+        final int selectedStreamIndex = quality.getSelectedVideoStreamIndex();
         if (selectedStreamIndex == menuItemIndex || availableStreams.size() <= menuItemIndex) {
             return;
         }
 
-        player.setPlaybackQuality(availableStreams.get(menuItemIndex));
+        final String newResolution = availableStreams.get(menuItemIndex).getResolution();
+        player.setPlaybackQuality(newResolution);
 
         binding.qualityTextView.setText(menuItem.getTitle());
-    }
-
-    @NonNull
-    private List<VideoStream> getAvailableVideoStreams() {
-        @Nullable final MediaItemTag currentMetadata = player.getCurrentMetadata();
-        if (currentMetadata != null && currentMetadata.getMaybeQuality().isPresent()) {
-            return currentMetadata.getMaybeQuality().get().getSortedVideoStreams();
-        }
-
-        return player.getCurrentStreamInfo()
-                .map(info -> ListHelper.getSortedStreamVideosList(
-                        context,
-                        ListHelper.getPlayableStreams(info.getVideoStreams(), info.getServiceId()),
-                        ListHelper.getPlayableStreams(
-                                info.getVideoOnlyStreams(),
-                                info.getServiceId()),
-                        false,
-                        true))
-                .orElse(Collections.emptyList());
-    }
-
-    private int getSelectedVideoStreamIndex(
-            @NonNull final List<VideoStream> availableStreams) {
-        @Nullable final MediaItemTag currentMetadata = player.getCurrentMetadata();
-        if (currentMetadata == null || currentMetadata.getMaybeQuality().isEmpty()) {
-            return -1;
-        }
-
-        final int selectedStreamIndex =
-                currentMetadata.getMaybeQuality().get().getSelectedVideoStreamIndex();
-        return selectedStreamIndex >= 0 && selectedStreamIndex < availableStreams.size()
-                ? selectedStreamIndex
-                : -1;
     }
 
     private void onAudioTrackItemClick(@NonNull final MenuItem menuItem) {

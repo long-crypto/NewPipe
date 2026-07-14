@@ -233,29 +233,19 @@ public class MainFragment extends BaseFragment implements TabLayout.OnTabSelecte
             final TabLayout.Tab tabToSet = binding.mainTabLayout.getTabAt(i);
             if (tabToSet != null) {
                 final Tab tab = tabsList.get(i);
-                tabToSet.setIcon(tab.getTabIconRes(requireContext()));
+                tabToSet.setIcon(getSafeTabIconRes(tab));
                 tabToSet.setContentDescription(tab.getTabName(requireContext()));
             }
         }
     }
 
-    private void updateTitleForTab(final int tabPosition) {
-        setTitle(tabsList.get(tabPosition).getTabName(requireContext()));
+    private int getSafeTabIconRes(final Tab tab) {
+        final int iconRes = tab.getTabIconRes(requireContext());
+        return iconRes > 0 ? iconRes : R.drawable.ic_asterisk;
     }
 
-    public boolean selectFeedTab() {
-        if (binding == null) {
-            return false;
-        }
-        for (int i = 0; i < tabsList.size(); i++) {
-            final Tab tab = tabsList.get(i);
-            if (tab instanceof Tab.FeedTab || tab instanceof Tab.FeedGroupTab) {
-                binding.pager.setCurrentItem(i, false);
-                updateTitleForTab(i);
-                return true;
-            }
-        }
-        return false;
+    private void updateTitleForTab(final int tabPosition) {
+        setTitle(tabsList.get(tabPosition).getTabName(requireContext()));
     }
 
     public void commitPlaylistTabs() {
@@ -276,7 +266,7 @@ public class MainFragment extends BaseFragment implements TabLayout.OnTabSelecte
             final String tabName = tab.getTabName(requireContext());
             final MenuItem item = menu.add(Menu.NONE, getBottomNavigationItemId(i), i,
                     getBottomNavigationDisplayLabel(tab, tabName));
-            item.setIcon(tab.getTabIconRes(requireContext()));
+            item.setIcon(getSafeTabIconRes(tab));
             item.setCheckable(true);
             MenuItemCompat.setContentDescription(item, tabName);
         }
@@ -285,10 +275,21 @@ public class MainFragment extends BaseFragment implements TabLayout.OnTabSelecte
     }
 
     private String getBottomNavigationDisplayLabel(final Tab tab, final String tabName) {
+        if (isLiveKioskTab(tab, tabName)) {
+            return getString(R.string.duration_live);
+        }
         if (tab.getTabId() == Tab.BookmarksTab.ID) {
             return getString(R.string.bottom_navigation_tab_bookmarks);
         }
         return tabName;
+    }
+
+    private boolean isLiveKioskTab(final Tab tab, final String tabName) {
+        if (tab instanceof Tab.KioskTab) {
+            return "live".equals(((Tab.KioskTab) tab).getKioskId());
+        }
+        return tab instanceof Tab.DefaultKioskTab
+                && getString(R.string.recommended_lives).equals(tabName);
     }
 
     private void updateBottomNavigationSelection(final int position) {

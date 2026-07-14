@@ -75,6 +75,7 @@ import java.util.List;
 import java.util.Optional;
 
 public final class NavigationHelper {
+    public static final String MAIN_FRAGMENT_TAG = "main_fragment_tag";
     public static final String SEARCH_FRAGMENT_TAG = "search_fragment_tag";
 
     private static final String TAG = NavigationHelper.class.getSimpleName();
@@ -350,9 +351,8 @@ public final class NavigationHelper {
     }
 
     public static void gotoMainFragment(final FragmentManager fragmentManager) {
-        fragmentManager.popBackStackImmediate(null, FragmentManager.POP_BACK_STACK_INCLUSIVE);
-
-        if (!(fragmentManager.findFragmentById(R.id.fragment_holder) instanceof MainFragment)) {
+        final boolean popped = fragmentManager.popBackStackImmediate(MAIN_FRAGMENT_TAG, 0);
+        if (!popped) {
             openMainFragment(fragmentManager);
         }
     }
@@ -363,6 +363,7 @@ public final class NavigationHelper {
         fragmentManager.popBackStackImmediate(null, FragmentManager.POP_BACK_STACK_INCLUSIVE);
         defaultTransaction(fragmentManager)
                 .replace(R.id.fragment_holder, new MainFragment())
+                .addToBackStack(MAIN_FRAGMENT_TAG)
                 .commit();
     }
 
@@ -381,28 +382,6 @@ public final class NavigationHelper {
                                           final int serviceId, final String searchString) {
         defaultTransaction(fragmentManager)
                 .replace(R.id.fragment_holder, SearchFragment.getInstance(serviceId, searchString))
-                .addToBackStack(SEARCH_FRAGMENT_TAG)
-                .commit();
-    }
-
-    public static void openSearchFragment(final FragmentManager fragmentManager,
-                                          final int serviceId,
-                                          final String searchString,
-                                          @Nullable final String uploaderUrl,
-                                          @Nullable final String uploaderName) {
-        openSearchFragment(fragmentManager, serviceId, searchString, uploaderUrl, null,
-                uploaderName);
-    }
-
-    public static void openSearchFragment(final FragmentManager fragmentManager,
-                                          final int serviceId,
-                                          final String searchString,
-                                          @Nullable final String uploaderUrl,
-                                          @Nullable final String uploaderOriginalUrl,
-                                          @Nullable final String uploaderName) {
-        defaultTransaction(fragmentManager)
-                .replace(R.id.fragment_holder, SearchFragment.getInstance(serviceId, searchString,
-                        uploaderUrl, uploaderOriginalUrl, uploaderName))
                 .addToBackStack(SEARCH_FRAGMENT_TAG)
                 .commit();
     }
@@ -592,16 +571,6 @@ public final class NavigationHelper {
                 .commit();
     }
 
-    public static void openFeedFragment(@NonNull final Context context,
-                                        @NonNull final FragmentManager fragmentManager,
-                                        final long groupId,
-                                        @Nullable final String groupName) {
-        defaultTransaction(fragmentManager)
-                .replace(R.id.fragment_holder, FeedFragment.newInstance(groupId, groupName))
-                .addToBackStack(null)
-                .commit();
-    }
-
     public static void openBookmarksFragment(final FragmentManager fragmentManager) {
         defaultTransaction(fragmentManager)
                 .replace(R.id.fragment_holder, new BookmarkFragment())
@@ -721,13 +690,6 @@ public final class NavigationHelper {
     public static void openSettings(final Context context) {
         // TODO: Replace with "ContextKt.navigateTo(context, Destination.Settings.INSTANCE);" later
         final Intent intent = new Intent(context, SettingsActivity.class);
-        context.startActivity(intent);
-    }
-
-    public static void openSettings(final Context context,
-                                    final Class<? extends Fragment> fragmentClass) {
-        final Intent intent = new Intent(context, SettingsActivity.class);
-        intent.putExtra(SettingsActivity.EXTRA_INITIAL_FRAGMENT, fragmentClass.getName());
         context.startActivity(intent);
     }
 

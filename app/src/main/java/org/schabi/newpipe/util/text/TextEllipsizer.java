@@ -2,7 +2,6 @@ package org.schabi.newpipe.util.text;
 
 import android.graphics.Paint;
 import android.text.Layout;
-import android.text.SpannableStringBuilder;
 import android.view.View;
 import android.widget.TextView;
 
@@ -98,6 +97,9 @@ public final class TextEllipsizer {
         linkifyContentView(v -> {
             final CharSequence charSeqText = view.getText();
             if (charSeqText != null && view.getLineCount() > maxLines) {
+                // Note that converting to String removes spans (i.e. links), but that's something
+                // we actually want since when the text is ellipsized we want all clicks on the
+                // comment to expand the comment, not to open links.
                 final String text = charSeqText.toString();
 
                 final Layout layout = view.getLayout();
@@ -123,9 +125,7 @@ public final class TextEllipsizer {
                     end -= 1;
                 }
 
-                final SpannableStringBuilder newVal =
-                        new SpannableStringBuilder(charSeqText.subSequence(0, end));
-                newVal.append(ELLIPSIS);
+                final String newVal = text.substring(0, end) + ELLIPSIS;
                 view.setText(newVal);
                 isEllipsized = true;
             } else {

@@ -23,9 +23,6 @@
             android:background="?attr/colorPrimary"
             android:theme="@style/ToolbarTheme"
             app:layout_scrollFlags="scroll|enterAlways"
-            app:navigationIconTint="?attr/actionColor"
-            app:subtitleTextColor="?attr/actionColor"
-            app:titleTextColor="?attr/actionColor"
             app:title="@string/app_name" />
 
     </com.google.android.material.appbar.AppBarLayout>
