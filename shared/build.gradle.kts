@@ -92,7 +92,7 @@ kotlin {
 
     sourceSets {
         commonMain {
-            kotlin.srcDir(buildConfigGenerator.map { it.destinationDir })
+            kotlin.srcDir(buildConfigGenerator)
             dependencies {
                 implementation(libs.jetbrains.compose.runtime)
                 implementation(libs.jetbrains.compose.foundation)
