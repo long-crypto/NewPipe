@@ -1,4 +1,4 @@
-name: "Build unsigned release APK on master"
+name: "Build unsigned release APK"
 
 on:
   workflow_dispatch:
@@ -8,8 +8,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
-        with:
-          ref: 'master'
+
+      - name: Verify selected application source
+        run: |
+          git rev-parse HEAD
+          test -f app/src/main/java/org/schabi/newpipe/settings/BiliBiliAccountSettingsFragment.java
+          grep -q "Theme.Material3" app/src/main/res/values/styles.xml
+          grep -q "TEMPORARILY_HIDDEN_SERVICE_IDS = setOf(6)" app/src/main/java/org/schabi/newpipe/util/ServiceHelper.kt
 
       - name: Checkout PipePipeExtractor source
         run: |

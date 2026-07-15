@@ -613,6 +613,9 @@ public final class ThemeHelper {
             case "LightTheme.Bandcamp" -> R.style.LightTheme_Bandcamp;
             case "DarkTheme.Bandcamp" -> R.style.DarkTheme_Bandcamp;
             case "BlackTheme.Bandcamp" -> R.style.BlackTheme_Bandcamp;
+            case "LightTheme.BiliBili" -> R.style.LightTheme_BiliBili;
+            case "DarkTheme.BiliBili" -> R.style.DarkTheme_BiliBili;
+            case "BlackTheme.BiliBili" -> R.style.BlackTheme_BiliBili;
             default -> baseTheme;
         };
     }
