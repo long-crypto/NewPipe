@@ -223,32 +223,26 @@ public interface PlaybackResolver extends Resolver<StreamInfo, MediaSource> {
                                             final String sourceUrl,
                                             @C.ContentType final int type,
                                             final MediaItemTag metadata) throws ResolverException {
-        if (metadata.getServiceId() == ServiceList.BiliBili.getServiceId()) {
-            return dataSource.getBiliMediaSourceFactory(sourceUrl).createMediaSource(
-                    new MediaItem.Builder()
-                            .setTag(metadata)
-                            .setUri(Uri.parse(sourceUrl))
-                            .setLiveConfiguration(
-                                    new MediaItem.LiveConfiguration.Builder()
-                                            .setTargetOffsetMs(LIVE_STREAM_EDGE_GAP_MILLIS)
-                                            .build())
-                            .build());
-        }
-
         final MediaSource.Factory factory;
         switch (type) {
             case C.CONTENT_TYPE_SS:
                 factory = dataSource.getLiveSsMediaSourceFactory();
                 break;
             case C.CONTENT_TYPE_DASH:
-                if (metadata.getServiceId() == ServiceList.YouTube.getServiceId()) {
+                if (metadata.getServiceId() == ServiceList.BiliBili.getServiceId()) {
+                    factory = dataSource.getLiveBiliDashMediaSourceFactory();
+                } else if (metadata.getServiceId() == ServiceList.YouTube.getServiceId()) {
                     factory = dataSource.getLiveYoutubeDashMediaSourceFactory();
                 } else {
                     factory = dataSource.getLiveDashMediaSourceFactory();
                 }
                 break;
             case C.CONTENT_TYPE_HLS:
-                factory = dataSource.getLiveHlsMediaSourceFactory();
+                if (metadata.getServiceId() == ServiceList.BiliBili.getServiceId()) {
+                    factory = dataSource.getLiveBiliHlsMediaSourceFactory();
+                } else {
+                    factory = dataSource.getLiveHlsMediaSourceFactory();
+                }
                 break;
             case C.CONTENT_TYPE_OTHER:
             case C.CONTENT_TYPE_RTSP:

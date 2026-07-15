@@ -46,12 +46,17 @@ public final class DownloaderImpl extends Downloader {
     private static DownloaderImpl instance;
     private final Map<String, String> mCookies;
     private final OkHttpClient client;
+    private final OkHttpClient noRedirectClient;
 
     private DownloaderImpl(final OkHttpClient.Builder builder) {
         this.client = builder
                 .readTimeout(30, TimeUnit.SECONDS)
 //                .cache(new Cache(new File(context.getExternalCacheDir(), "okhttp"),
 //                        16 * 1024 * 1024))
+                .build();
+        this.noRedirectClient = client.newBuilder()
+                .followRedirects(false)
+                .followSslRedirects(false)
                 .build();
         this.mCookies = new HashMap<>();
     }
@@ -144,7 +149,7 @@ public final class DownloaderImpl extends Downloader {
     public Response execute(@NonNull final Request request)
             throws IOException, ReCaptchaException {
         final okhttp3.Request okHttpRequest = buildRequest(request);
-        try (okhttp3.Response response = client.newCall(okHttpRequest).execute()) {
+        try (okhttp3.Response response = getClient(request).newCall(okHttpRequest).execute()) {
             return buildExtractorResponse(response, request.url());
         }
     }
@@ -153,7 +158,7 @@ public final class DownloaderImpl extends Downloader {
     public CancellableCall executeAsync(@NonNull final Request request,
                                         final AsyncCallback callback)
             throws IOException, ReCaptchaException {
-        final Call call = client.newCall(buildRequest(request));
+        final Call call = getClient(request).newCall(buildRequest(request));
         final CancellableCall cancellableCall = new CancellableCall(call);
         call.enqueue(new Callback() {
             @Override
@@ -177,6 +182,11 @@ public final class DownloaderImpl extends Downloader {
             }
         });
         return cancellableCall;
+    }
+
+    @NonNull
+    private OkHttpClient getClient(@NonNull final Request request) {
+        return request.followRedirects() ? client : noRedirectClient;
     }
 
     @NonNull

@@ -36,7 +36,6 @@ import org.schabi.newpipe.databinding.FragmentChannelBinding;
 import org.schabi.newpipe.error.ErrorInfo;
 import org.schabi.newpipe.error.ErrorUtil;
 import org.schabi.newpipe.error.UserAction;
-import org.schabi.newpipe.extractor.ServiceList;
 import org.schabi.newpipe.extractor.channel.ChannelInfo;
 import org.schabi.newpipe.extractor.exceptions.ContentNotSupportedException;
 import org.schabi.newpipe.extractor.linkhandler.ListLinkHandler;
@@ -566,10 +565,7 @@ public class ChannelFragment extends BaseStateFragment<ChannelInfo>
     }
 
     private void runWorker(final boolean forceLoad) {
-        final boolean useLightChannelInfo = serviceId == ServiceList.BiliBili.getServiceId();
-        currentWorker = (useLightChannelInfo
-                ? ExtractorHelper.getChannelInfoWithoutInitialPage(serviceId, url, forceLoad)
-                : ExtractorHelper.getChannelInfo(serviceId, url, forceLoad))
+        currentWorker = ExtractorHelper.getChannelInfo(serviceId, url, forceLoad)
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(result -> {

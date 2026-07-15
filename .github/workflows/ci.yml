@@ -48,14 +48,14 @@ jobs:
             git init external/NewPipeExtractor
             git -C external/NewPipeExtractor remote add origin https://github.com/wizdom13/PipePipeExtractor
           fi
-          git -C external/NewPipeExtractor fetch --depth 1 origin main
+          git -C external/NewPipeExtractor fetch --depth 1 origin 5a913165327971226537d201e30d7c1d9f01c616
           git -C external/NewPipeExtractor checkout --detach FETCH_HEAD
 
       - name: Verify PipePipeExtractor source
         run: |
           git -C external/NewPipeExtractor remote -v
           git -C external/NewPipeExtractor remote get-url origin | grep -q "github.com/wizdom13/PipePipeExtractor"
-          git -C external/NewPipeExtractor rev-parse HEAD
+          test "$(git -C external/NewPipeExtractor rev-parse HEAD)" = "5a913165327971226537d201e30d7c1d9f01c616"
           test -d external/NewPipeExtractor/extractor
           grep -n "JavaLanguageVersion.of(21)" external/NewPipeExtractor/build.gradle
           grep -n "options.release = 21" external/NewPipeExtractor/build.gradle
@@ -128,14 +128,14 @@ jobs:
             git init external/NewPipeExtractor
             git -C external/NewPipeExtractor remote add origin https://github.com/wizdom13/PipePipeExtractor
           fi
-          git -C external/NewPipeExtractor fetch --depth 1 origin main
+          git -C external/NewPipeExtractor fetch --depth 1 origin 5a913165327971226537d201e30d7c1d9f01c616
           git -C external/NewPipeExtractor checkout --detach FETCH_HEAD
 
       - name: Verify PipePipeExtractor source
         run: |
           git -C external/NewPipeExtractor remote -v
           git -C external/NewPipeExtractor remote get-url origin | grep -q "github.com/wizdom13/PipePipeExtractor"
-          git -C external/NewPipeExtractor rev-parse HEAD
+          test "$(git -C external/NewPipeExtractor rev-parse HEAD)" = "5a913165327971226537d201e30d7c1d9f01c616"
           test -d external/NewPipeExtractor/extractor
           grep -n "JavaLanguageVersion.of(21)" external/NewPipeExtractor/build.gradle
           grep -n "options.release = 21" external/NewPipeExtractor/build.gradle

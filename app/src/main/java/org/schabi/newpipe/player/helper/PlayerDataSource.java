@@ -73,6 +73,7 @@ public class PlayerDataSource {
     private final DataSource.Factory cachelessDataSourceFactory;
     private final CacheFactory cacheDataSourceFactory;
     private final DataSource.Factory biliCachelessDataSourceFactory;
+    private final DataSource.Factory biliLiveCachelessDataSourceFactory;
     private final CacheFactory biliCacheDataSourceFactory;
 
     // YouTube-specific Data Source Factories (with cache)
@@ -101,6 +102,12 @@ public class PlayerDataSource {
                         .setUserAgent(DownloaderImpl.USER_AGENT)
                         .setDefaultRequestProperties(Map.of(
                                 "Referer", BilibiliService.WWW_REFERER)))
+                .setTransferListener(transferListener);
+        biliLiveCachelessDataSourceFactory = new DefaultDataSource.Factory(context,
+                new DefaultHttpDataSource.Factory()
+                        .setUserAgent(DownloaderImpl.USER_AGENT)
+                        .setDefaultRequestProperties(Map.of(
+                                "Referer", BilibiliService.LIVE_REFERER)))
                 .setTransferListener(transferListener);
         biliCacheDataSourceFactory = new CacheFactory(context, transferListener, cache,
                 new DefaultHttpDataSource.Factory()
@@ -178,7 +185,7 @@ public class PlayerDataSource {
 
     public ProgressiveMediaSource.Factory getBiliMediaSourceFactory(final String url) {
         final DataSource.Factory factory = url.contains("live.bilibili.com")
-                ? biliCachelessDataSourceFactory
+                ? biliLiveCachelessDataSourceFactory
                 : biliCacheDataSourceFactory;
         return new ProgressiveMediaSource.Factory(factory)
                 .setContinueLoadingCheckIntervalBytes(progressiveLoadIntervalBytes);
@@ -189,10 +196,26 @@ public class PlayerDataSource {
                 .setAllowChunklessPreparation(true);
     }
 
+    public HlsMediaSource.Factory getLiveBiliHlsMediaSourceFactory() {
+        return new HlsMediaSource.Factory(biliLiveCachelessDataSourceFactory)
+                .setAllowChunklessPreparation(true)
+                .setPlaylistTrackerFactory((dataSourceFactory, loadErrorHandlingPolicy,
+                                            playlistParserFactory) ->
+                        new DefaultHlsPlaylistTracker(dataSourceFactory, loadErrorHandlingPolicy,
+                                playlistParserFactory,
+                                PLAYLIST_STUCK_TARGET_DURATION_COEFFICIENT));
+    }
+
     public DashMediaSource.Factory getBiliDashMediaSourceFactory() {
         return new DashMediaSource.Factory(
                 getDefaultDashChunkSourceFactory(biliCacheDataSourceFactory),
                 biliCacheDataSourceFactory);
+    }
+
+    public DashMediaSource.Factory getLiveBiliDashMediaSourceFactory() {
+        return new DashMediaSource.Factory(
+                getDefaultDashChunkSourceFactory(biliLiveCachelessDataSourceFactory),
+                biliLiveCachelessDataSourceFactory);
     }
     public SsMediaSource.Factory getSSMediaSourceFactory() {
         return new SsMediaSource.Factory(
