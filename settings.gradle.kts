@@ -33,9 +33,12 @@ val newPipeExtractorDir = when {
     adjacentNewPipeExtractor.isDirectory -> adjacentNewPipeExtractor
     else -> throw GradleException(
         "PipePipeExtractor source checkout not found. " +
-            "Clone https://github.com/wizdom13/PipePipeExtractor into external/NewPipeExtractor " +
-            "or run git clone https://github.com/wizdom13/PipePipeExtractor ..\\PipePipeExtractor " +
-            "for a Windows-style adjacent checkout. The external directory name remains " +
+            "Clone https://github.com/InfinityLoop1308/PipePipeExtractor into " +
+            "external/NewPipeExtractor or run git clone " +
+            "https://github.com/InfinityLoop1308/PipePipeExtractor ..\\PipePipeExtractor " +
+            "for a Windows-style adjacent checkout. Then run bash " +
+            ".github/scripts/prepare-pipepipe-extractor.sh against the checkout to target " +
+            "the app's Java 21 toolchain. The external directory name remains " +
             "NewPipeExtractor because the app still depends on the TeamNewPipe artifact name " +
             "while this experiment substitutes it with PipePipeExtractor source."
     )

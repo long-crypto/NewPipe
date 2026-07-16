@@ -170,7 +170,8 @@ public class ChannelFragment extends BaseStateFragment<ChannelInfo>
                         NavigationHelper.openSettings(requireContext());
                     } else if (itemId == R.id.menu_item_rss) {
                         if (currentInfo != null) {
-                            ShareUtils.openUrlInApp(requireContext(), currentInfo.getFeedUrl());
+                            ShareUtils.openUrlInApp(requireContext(),
+                                    ExtractorApiCompat.feedUrl(currentInfo));
                         }
                     } else if (itemId == R.id.menu_item_openInBrowser) {
                         if (currentInfo != null) {
@@ -415,7 +416,7 @@ public class ChannelFragment extends BaseStateFragment<ChannelInfo>
         if (menuRssButton == null || currentInfo == null) {
             return;
         }
-        menuRssButton.setVisible(!TextUtils.isEmpty(currentInfo.getFeedUrl()));
+        menuRssButton.setVisible(!TextUtils.isEmpty(ExtractorApiCompat.feedUrl(currentInfo)));
     }
 
     private void updateNotifyButton(@Nullable final SubscriptionEntity subscription) {
