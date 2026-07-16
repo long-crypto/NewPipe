@@ -298,7 +298,7 @@ public class MainActivity extends AppCompatActivity {
 
         int kioskMenuItemId = 0;
 
-        for (final String kioskId : getDrawerKioskIds(service)) {
+        for (final String kioskId : service.getKioskList().getAvailableKiosks()) {
             drawerLayoutBinding.navigation.getMenu()
                     .add(R.id.menu_kiosks_group, kioskMenuItemId, 0, KioskTranslator
                             .getTranslatedKioskName(kioskId, this))
@@ -374,7 +374,7 @@ public class MainActivity extends AppCompatActivity {
     private void kioskSelected(final MenuItem item) throws ExtractionException {
         final StreamingService currentService = ServiceHelper.getSelectedService(this);
         int kioskMenuItemId = 0;
-        for (final String kioskId : getDrawerKioskIds(currentService)) {
+        for (final String kioskId : currentService.getKioskList().getAvailableKiosks()) {
             if (kioskMenuItemId == item.getItemId()) {
                 NavigationHelper.openKioskFragment(getSupportFragmentManager(),
                         currentService.getServiceId(), kioskId);
@@ -382,20 +382,6 @@ public class MainActivity extends AppCompatActivity {
             }
             kioskMenuItemId++;
         }
-    }
-
-    /**
-     * Returns every kiosk advertised by the selected streaming service in extractor order. The
-     * drawer item IDs are assigned from this same list both when building and selecting menu
-     * entries, so the selection index stays aligned with the visible drawer rows.
-     *
-     * @param service selected streaming service used to build drawer kiosk entries
-     * @return all available kiosk IDs to show in the drawer
-     * @throws ExtractionException if kiosk metadata cannot be loaded
-     */
-    private List<String> getDrawerKioskIds(final StreamingService service)
-            throws ExtractionException {
-        return new ArrayList<>(service.getKioskList().getAvailableKiosks());
     }
 
     private void optionsAboutSelected(final MenuItem item) {

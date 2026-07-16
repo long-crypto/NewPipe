@@ -229,20 +229,14 @@ public interface PlaybackResolver extends Resolver<StreamInfo, MediaSource> {
                 factory = dataSource.getLiveSsMediaSourceFactory();
                 break;
             case C.CONTENT_TYPE_DASH:
-                if (metadata.getServiceId() == ServiceList.BiliBili.getServiceId()) {
-                    factory = dataSource.getLiveBiliDashMediaSourceFactory();
-                } else if (metadata.getServiceId() == ServiceList.YouTube.getServiceId()) {
+                if (metadata.getServiceId() == ServiceList.YouTube.getServiceId()) {
                     factory = dataSource.getLiveYoutubeDashMediaSourceFactory();
                 } else {
                     factory = dataSource.getLiveDashMediaSourceFactory();
                 }
                 break;
             case C.CONTENT_TYPE_HLS:
-                if (metadata.getServiceId() == ServiceList.BiliBili.getServiceId()) {
-                    factory = dataSource.getLiveBiliHlsMediaSourceFactory();
-                } else {
-                    factory = dataSource.getLiveHlsMediaSourceFactory();
-                }
+                factory = dataSource.getLiveHlsMediaSourceFactory();
                 break;
             case C.CONTENT_TYPE_OTHER:
             case C.CONTENT_TYPE_RTSP:
@@ -553,20 +547,6 @@ public interface PlaybackResolver extends Resolver<StreamInfo, MediaSource> {
         throwResolverExceptionIfUrlNullOrEmpty(stream.getContent());
         final DeliveryMethod method = stream.getDeliveryMethod();
         switch (method) {
-            case HLS:
-                return dataSource.getBiliHlsMediaSourceFactory().createMediaSource(
-                        new MediaItem.Builder()
-                                .setTag(metadata)
-                                .setUri(Uri.parse(stream.getContent()))
-                                .setCustomCacheKey(cacheKey)
-                                .build());
-            case DASH:
-                return dataSource.getBiliDashMediaSourceFactory().createMediaSource(
-                        new MediaItem.Builder()
-                                .setTag(metadata)
-                                .setUri(Uri.parse(stream.getContent()))
-                                .setCustomCacheKey(cacheKey)
-                                .build());
             case PROGRESSIVE_HTTP:
                 return dataSource.getBiliMediaSourceFactory(streamInfo.getUrl()).createMediaSource(
                         new MediaItem.Builder()
@@ -575,13 +555,8 @@ public interface PlaybackResolver extends Resolver<StreamInfo, MediaSource> {
                                 .setCustomCacheKey(cacheKey)
                                 .build());
             default:
-                // fallback to progressive behavior as before
-                return dataSource.getBiliMediaSourceFactory(streamInfo.getUrl()).createMediaSource(
-                        new MediaItem.Builder()
-                                .setTag(metadata)
-                                .setUri(Uri.parse(stream.getContent()))
-                                .setCustomCacheKey(cacheKey)
-                                .build());
+                throw new ResolverException("Unsupported delivery method for BiliBili contents: "
+                        + method);
         }
     }
     //endregion

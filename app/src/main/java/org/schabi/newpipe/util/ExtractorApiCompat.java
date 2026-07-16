@@ -13,7 +13,6 @@ import java.lang.reflect.Method;
  */
 public final class ExtractorApiCompat {
     private static final String DESCRIPTION_GETTER = "get" + "Description";
-    private static final String FEED_URL_GETTER = "get" + "FeedUrl";
 
     private ExtractorApiCompat() {
     }
@@ -40,12 +39,6 @@ public final class ExtractorApiCompat {
             return description;
         }
         return "";
-    }
-
-    @NonNull
-    public static String feedUrl(@Nullable final Object item) {
-        final Object value = invokeNoArg(item, FEED_URL_GETTER);
-        return value instanceof String ? (String) value : "";
     }
 
     @Nullable

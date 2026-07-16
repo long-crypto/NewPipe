@@ -72,7 +72,6 @@ public class PlayerDataSource {
     // Generic Data Source Factories (without or with cache)
     private final DataSource.Factory cachelessDataSourceFactory;
     private final CacheFactory cacheDataSourceFactory;
-    private final DataSource.Factory biliCachelessDataSourceFactory;
     private final DataSource.Factory biliLiveCachelessDataSourceFactory;
     private final CacheFactory biliCacheDataSourceFactory;
 
@@ -97,12 +96,6 @@ public class PlayerDataSource {
                 .setTransferListener(transferListener);
         cacheDataSourceFactory = new CacheFactory(context, transferListener, cache,
                 new DefaultHttpDataSource.Factory().setUserAgent(DownloaderImpl.USER_AGENT));
-        biliCachelessDataSourceFactory = new DefaultDataSource.Factory(context,
-                new DefaultHttpDataSource.Factory()
-                        .setUserAgent(DownloaderImpl.USER_AGENT)
-                        .setDefaultRequestProperties(Map.of(
-                                "Referer", BilibiliService.WWW_REFERER)))
-                .setTransferListener(transferListener);
         biliLiveCachelessDataSourceFactory = new DefaultDataSource.Factory(context,
                 new DefaultHttpDataSource.Factory()
                         .setUserAgent(DownloaderImpl.USER_AGENT)
@@ -191,32 +184,6 @@ public class PlayerDataSource {
                 .setContinueLoadingCheckIntervalBytes(progressiveLoadIntervalBytes);
     }
 
-    public HlsMediaSource.Factory getBiliHlsMediaSourceFactory() {
-        return new HlsMediaSource.Factory(biliCacheDataSourceFactory)
-                .setAllowChunklessPreparation(true);
-    }
-
-    public HlsMediaSource.Factory getLiveBiliHlsMediaSourceFactory() {
-        return new HlsMediaSource.Factory(biliLiveCachelessDataSourceFactory)
-                .setAllowChunklessPreparation(true)
-                .setPlaylistTrackerFactory((dataSourceFactory, loadErrorHandlingPolicy,
-                                            playlistParserFactory) ->
-                        new DefaultHlsPlaylistTracker(dataSourceFactory, loadErrorHandlingPolicy,
-                                playlistParserFactory,
-                                PLAYLIST_STUCK_TARGET_DURATION_COEFFICIENT));
-    }
-
-    public DashMediaSource.Factory getBiliDashMediaSourceFactory() {
-        return new DashMediaSource.Factory(
-                getDefaultDashChunkSourceFactory(biliCacheDataSourceFactory),
-                biliCacheDataSourceFactory);
-    }
-
-    public DashMediaSource.Factory getLiveBiliDashMediaSourceFactory() {
-        return new DashMediaSource.Factory(
-                getDefaultDashChunkSourceFactory(biliLiveCachelessDataSourceFactory),
-                biliLiveCachelessDataSourceFactory);
-    }
     public SsMediaSource.Factory getSSMediaSourceFactory() {
         return new SsMediaSource.Factory(
                 new DefaultSsChunkSource.Factory(cachelessDataSourceFactory),

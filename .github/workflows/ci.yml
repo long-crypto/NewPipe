@@ -93,7 +93,7 @@ jobs:
           grep -R "containsKey(JSON_TABS_ARRAY_KEY)" app/src/main/java/org/schabi/newpipe/settings/tabs/TabsJsonHelper.java
 
       - name: Build debug APK and run jvm tests
-        run: ./gradlew assembleContinuous lintContinuous testDebugUnitTest --stacktrace -DskipFormatKtlint
+        run: ./gradlew --no-configuration-cache assembleContinuous lintContinuous testDebugUnitTest --stacktrace -DskipFormatKtlint
 
       - name: Upload APK
         uses: actions/upload-artifact@v7
@@ -167,7 +167,7 @@ jobs:
           api-level: ${{ matrix.api-level }}
           target: ${{ matrix.target }}
           arch: ${{ matrix.arch }}
-          script: ./gradlew connectedCheck --stacktrace
+          script: ./gradlew --no-configuration-cache connectedCheck --stacktrace
 
       - name: Upload test report when tests fail
         uses: actions/upload-artifact@v7
@@ -206,4 +206,4 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # Needed to get PR information, if any
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-        run: ./gradlew build sonar --info
+        run: ./gradlew --no-configuration-cache build sonar --info

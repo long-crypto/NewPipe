@@ -22,7 +22,7 @@ import org.schabi.newpipe.ktx.getStringSafe
 
 object ServiceHelper {
     private val DEFAULT_FALLBACK_SERVICE: StreamingService = ServiceList.YouTube
-    private val TEMPORARILY_HIDDEN_SERVICE_IDS = setOf(6)
+    private val TEMPORARILY_HIDDEN_SERVICE_IDS = setOf(ServiceList.NicoNico.serviceId)
 
     @JvmStatic
     fun isServiceVisible(service: StreamingService): Boolean {

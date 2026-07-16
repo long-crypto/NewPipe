@@ -171,10 +171,8 @@ class FeedLoadManager(private val context: Context) {
             var originalInfo: Info? = null
             var streams: List<StreamInfoItem>? = null
             val errors = ArrayList<Throwable>()
-            val shouldUseDedicatedFeed = useFeedExtractor ||
-                subscriptionEntity.serviceId == ServiceList.BiliBili.serviceId
 
-            if (shouldUseDedicatedFeed) {
+            if (useFeedExtractor) {
                 NewPipe.getService(subscriptionEntity.serviceId)
                     .getFeedExtractor(subscriptionEntity.url)
                     ?.also { feedExtractor ->
@@ -238,7 +236,7 @@ class FeedLoadManager(private val context: Context) {
             }
 
             return Notification.createOnNext(
-                buildFeedUpdateInfo(
+                FeedUpdateInfo(
                     subscriptionEntity,
                     originalInfo!!,
                     streams!!,
@@ -255,35 +253,6 @@ class FeedLoadManager(private val context: Context) {
             )
             return Notification.createOnError(wrapper)
         }
-    }
-
-    private fun buildFeedUpdateInfo(
-        subscriptionEntity: SubscriptionEntity,
-        info: Info,
-        streams: List<StreamInfoItem>,
-        errors: List<Throwable>
-    ): FeedUpdateInfo {
-        if (info !is FeedInfo) {
-            return FeedUpdateInfo(subscriptionEntity, info, streams, errors)
-        }
-
-        val resolvedName = info.name
-            .takeIf { it.isNotBlank() && it != info.id && it != info.url }
-            ?: subscriptionEntity.name.orEmpty()
-        val resolvedUrl = info.url.takeIf { it.isNotBlank() } ?: subscriptionEntity.url.orEmpty()
-
-        return FeedUpdateInfo(
-            uid = subscriptionEntity.uid,
-            notificationMode = subscriptionEntity.notificationMode,
-            name = resolvedName,
-            avatarUrl = subscriptionEntity.avatarUrl,
-            url = resolvedUrl,
-            serviceId = info.serviceId,
-            description = null,
-            subscriberCount = null,
-            streams = streams,
-            errors = errors
-        )
     }
 
     /**
