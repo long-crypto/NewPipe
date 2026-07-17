@@ -48,7 +48,7 @@ index bbbfbe5..3903571 100644
      @Override
      public long getFeedFetchInterval() {
 -        return 10000;
-+        return 5000;
++        return 3000;
      }
  
      @Override
@@ -229,4 +229,31 @@ index c233103..3815ff4 100644
 +        return getHeaders(requestUrl);
 +    }
 +
+ }
+diff --git a/extractor/src/main/java/org/schabi/newpipe/extractor/services/bilibili/extractors/BilibiliCommentsInfoItemExtractor.java b/extractor/src/main/java/org/schabi/newpipe/extractor/services/bilibili/extractors/BilibiliCommentsInfoItemExtractor.java
+--- a/extractor/src/main/java/org/schabi/newpipe/extractor/services/bilibili/extractors/BilibiliCommentsInfoItemExtractor.java
++++ b/extractor/src/main/java/org/schabi/newpipe/extractor/services/bilibili/extractors/BilibiliCommentsInfoItemExtractor.java
+@@ -130,18 +130,19 @@ public class BilibiliCommentsInfoItemExtractor implements CommentsInfoItemExtra
+     @Nonnull
+     @Override
+     public Collection<Image> getPictures() throws ParsingException {
+-        JsonArray array = data.getObject("content").getArray("pictures");
+-        if (array.size() != 0) {
++        final JsonArray array = data.getObject("content").getArray("pictures");
++        if (array != null && array.size() != 0) {
+             return array.stream()
+                     .map(x -> {
+                         JsonObject jsonObject = (JsonObject) x;
+-                        String src = jsonObject.getString("img_src");
++                        final String src = jsonObject.getString("img_src")
++                                .replace("http:", "https:");
+                         int width = jsonObject.getInt("img_width");
+                         int height = jsonObject.getInt("img_height");
+                         return new Image(src, height, width, Image.ResolutionLevel.fromHeight(height));
+                     })
+                     .collect(Collectors.toList());
+         } else {
+             return CommentsInfoItemExtractor.super.getPictures();
+         }
+     }
  }

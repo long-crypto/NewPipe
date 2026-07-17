@@ -231,41 +231,48 @@ class FeedLoadManager(private val context: Context) {
                 errors.addAll(channelInfo.errors)
                 originalInfo = channelInfo
 
-                streams = channelInfo.tabs
-                    .filter { tab ->
-                        ChannelTabHelper.fetchFeedChannelTab(
-                            context,
-                            defaultSharedPreferences,
-                            tab
-                        )
-                    }
-                    .map {
-                        Pair(
-                            getChannelTab(subscriptionEntity.serviceId, it, true)
-                                .onErrorReturn(storeOriginalErrorAndRethrow)
-                                .blockingGet(),
-                            it
-                        )
-                    }
-                    .flatMap { (channelTabInfo, linkHandler) ->
-                        errors.addAll(channelTabInfo.errors)
-                        if (channelTabInfo.relatedItems.isEmpty() &&
-                            channelTabInfo.nextPage != null
-                        ) {
-                            val infoItemsPage = getMoreChannelTabItems(
-                                subscriptionEntity.serviceId,
-                                linkHandler,
-                                channelTabInfo.nextPage
+                streams = if (
+                    subscriptionEntity.serviceId == ServiceList.BiliBili.serviceId &&
+                    channelInfo.relatedItems.isNotEmpty()
+                ) {
+                    channelInfo.relatedItems.filterIsInstance<StreamInfoItem>()
+                } else {
+                    channelInfo.tabs
+                        .filter { tab ->
+                            ChannelTabHelper.fetchFeedChannelTab(
+                                context,
+                                defaultSharedPreferences,
+                                tab
                             )
-                                .blockingGet()
-
-                            errors.addAll(infoItemsPage.errors)
-                            return@flatMap infoItemsPage.items
-                        } else {
-                            return@flatMap channelTabInfo.relatedItems
                         }
-                    }
-                    .filterIsInstance<StreamInfoItem>()
+                        .map {
+                            Pair(
+                                getChannelTab(subscriptionEntity.serviceId, it, true)
+                                    .onErrorReturn(storeOriginalErrorAndRethrow)
+                                    .blockingGet(),
+                                it
+                            )
+                        }
+                        .flatMap { (channelTabInfo, linkHandler) ->
+                            errors.addAll(channelTabInfo.errors)
+                            if (channelTabInfo.relatedItems.isEmpty() &&
+                                channelTabInfo.nextPage != null
+                            ) {
+                                val infoItemsPage = getMoreChannelTabItems(
+                                    subscriptionEntity.serviceId,
+                                    linkHandler,
+                                    channelTabInfo.nextPage
+                                )
+                                    .blockingGet()
+
+                                errors.addAll(infoItemsPage.errors)
+                                return@flatMap infoItemsPage.items
+                            } else {
+                                return@flatMap channelTabInfo.relatedItems
+                            }
+                        }
+                        .filterIsInstance<StreamInfoItem>()
+                }
             }
 
             return Notification.createOnNext(
