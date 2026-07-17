@@ -18,7 +18,6 @@ import org.schabi.newpipe.extractor.channel.ChannelInfo;
 import org.schabi.newpipe.extractor.stream.Description;
 import org.schabi.newpipe.fragments.detail.BaseDescriptionFragment;
 import org.schabi.newpipe.util.DeviceUtils;
-import org.schabi.newpipe.util.ExtractorApiCompat;
 import org.schabi.newpipe.util.Localization;
 
 import java.util.List;
@@ -44,7 +43,9 @@ public class ChannelAboutFragment extends BaseDescriptionFragment {
     @Nullable
     @Override
     protected Description displayDescription() {
-        return ExtractorApiCompat.description(channelInfo);
+        final String description = channelInfo.getDescription();
+        return description == null ? Description.EMPTY_DESCRIPTION
+                : new Description(description, Description.PLAIN_TEXT);
     }
 
     @NonNull

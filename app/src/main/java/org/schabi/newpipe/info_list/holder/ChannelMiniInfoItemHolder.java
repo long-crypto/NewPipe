@@ -13,7 +13,6 @@ import org.schabi.newpipe.extractor.channel.ChannelInfoItem;
 import org.schabi.newpipe.extractor.utils.Utils;
 import org.schabi.newpipe.info_list.InfoItemBuilder;
 import org.schabi.newpipe.local.history.HistoryRecordManager;
-import org.schabi.newpipe.util.ExtractorApiCompat;
 import org.schabi.newpipe.util.Localization;
 import org.schabi.newpipe.util.image.CoilHelper;
 import org.schabi.newpipe.util.image.ExtractorImageCompat;
@@ -76,7 +75,7 @@ public class ChannelMiniInfoItemHolder extends InfoItemHolder {
 
         if (itemChannelDescriptionView != null) {
             // itemChannelDescriptionView will be null in the mini variant
-            final String description = ExtractorApiCompat.descriptionText(item);
+            final String description = item.getDescription();
             if (Utils.isBlank(description)) {
                 itemChannelDescriptionView.setVisibility(View.GONE);
             } else {
