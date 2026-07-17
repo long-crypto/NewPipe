@@ -1,0 +1,223 @@
+diff --git a/extractor/src/main/java/org/schabi/newpipe/extractor/services/bilibili/BilibiliService.java b/extractor/src/main/java/org/schabi/newpipe/extractor/services/bilibili/BilibiliService.java
+index bbbfbe5..3903571 100644
+--- a/extractor/src/main/java/org/schabi/newpipe/extractor/services/bilibili/BilibiliService.java
++++ b/extractor/src/main/java/org/schabi/newpipe/extractor/services/bilibili/BilibiliService.java
+@@ -71,6 +71,7 @@ import java.util.stream.Collectors;
+ public class BilibiliService extends StreamingService {
+     private final WatchDataCache watchDataCache;
+     private static LinkedHashMap<String, String> defaultLatestCookies = null;
++    private static String defaultLatestCookiesUserAgent = null;
+ 
+     public static final String WWW_REFERER = "https://www.bilibili.com/";
+     public static final String SPACE_REFERER = "https://space.bilibili.com/";
+@@ -216,8 +217,13 @@ public class BilibiliService extends StreamingService {
+         return result.toString();
+     }
+ 
+-    static public LinkedHashMap<String, String> getDefaultCookies() throws IOException {
+-        if (defaultLatestCookies == null || Long.parseLong(defaultLatestCookies.get("bili_ticket_expires")) <= Instant.now().getEpochSecond()) {
++    static public synchronized LinkedHashMap<String, String> getDefaultCookies()
++            throws IOException {
++        final String currentUserAgent = DeviceForger.requireRandomDevice().getUserAgent();
++        if (defaultLatestCookies == null
++                || !Objects.equals(defaultLatestCookiesUserAgent, currentUserAgent)
++                || Long.parseLong(defaultLatestCookies.get("bili_ticket_expires"))
++                <= Instant.now().getEpochSecond()) {
+             Response response;
+             try {
+                 response = getDownloader().get(FETCH_COOKIE_URL, getUserAgentHeaders(WWW_REFERER));
+@@ -255,10 +261,16 @@ public class BilibiliService extends StreamingService {
+             cookies.put("buvid_fp", bytesToHex(randomBuvidFp));
+ 
+             defaultLatestCookies = cookies;
++            defaultLatestCookiesUserAgent = currentUserAgent;
+         }
+         return defaultLatestCookies;
+     }
+ 
++    static public synchronized void invalidateDefaultCookies() {
++        defaultLatestCookies = null;
++        defaultLatestCookiesUserAgent = null;
++    }
++
+     static public LinkedHashMap<String, List<String>> getHeaders(String originalUrl) throws IOException {
+         LinkedHashMap<String, List<String>> headers = getUserAgentHeaders(originalUrl);
+         String cookie = mapToCookieHeader(getDefaultCookies());
+diff --git a/extractor/src/main/java/org/schabi/newpipe/extractor/services/bilibili/BilibiliWebSocketClient.java b/extractor/src/main/java/org/schabi/newpipe/extractor/services/bilibili/BilibiliWebSocketClient.java
+index 4f2ec91..03fc8f9 100644
+--- a/extractor/src/main/java/org/schabi/newpipe/extractor/services/bilibili/BilibiliWebSocketClient.java
++++ b/extractor/src/main/java/org/schabi/newpipe/extractor/services/bilibili/BilibiliWebSocketClient.java
+@@ -15,6 +15,7 @@ import java.nio.ByteBuffer;
+ import java.nio.charset.StandardCharsets;
+ import java.util.ArrayList;
+ import java.util.Arrays;
++import java.util.concurrent.ConcurrentLinkedQueue;
+ import java.util.concurrent.Executors;
+ import java.util.concurrent.ScheduledExecutorService;
+ import java.util.concurrent.TimeUnit;
+@@ -29,7 +30,7 @@ public class BilibiliWebSocketClient {
+     long id;
+     private final AtomicBoolean shouldStop = new AtomicBoolean(false);
+ 
+-    private final ArrayList<JsonObject> messages  = new ArrayList<>();
++    private final ConcurrentLinkedQueue<JsonObject> messages = new ConcurrentLinkedQueue<>();
+ 
+     public class WrappedWebSocketClient extends WebSocketClient {
+         private ScheduledExecutorService executor;
+@@ -70,11 +71,12 @@ public class BilibiliWebSocketClient {
+             }
+             executor = Executors.newSingleThreadScheduledExecutor();
+             executor.scheduleAtFixedRate(() -> {
++                if (shouldStop.get() || !isOpen()) {
++                    return;
++                }
+                 try {
+-                    while (!shouldStop.get()) {
+-                        send(encode("",2));
+-                    }
+-                } catch (IOException e) {
++                    send(encode("", 2));
++                } catch (IOException | RuntimeException e) {
+                     e.printStackTrace();
+                 }
+             }, 30000, 30000, TimeUnit.MILLISECONDS);
+@@ -138,13 +140,11 @@ public class BilibiliWebSocketClient {
+         public void onError(Exception ex) {
+             System.out.println(ex.fillInStackTrace());
+         }
+-        public void stopTimer() {
+-            try {
+-                executor.shutdown();
+-            } catch (Exception ignored){
+-
++        public synchronized void stopTimer() {
++            if (executor != null) {
++                executor.shutdownNow();
++                executor = null;
+             }
+-
+         }
+     }
+     public BilibiliWebSocketClient(long id, String token) throws URISyntaxException {
+@@ -157,18 +157,25 @@ public class BilibiliWebSocketClient {
+         return webSocketClient;
+     }
+     public void wrappedReconnect() throws URISyntaxException, InterruptedException {
+-        webSocketClient.stopTimer();
++        if (webSocketClient != null) {
++            webSocketClient.stopTimer();
++        }
+         webSocketClient = new WrappedWebSocketClient();
+         webSocketClient.connectBlocking();
+     }
+     public ArrayList<JsonObject> getMessages() {
+-        ArrayList<JsonObject> temp = (ArrayList<JsonObject>) messages.clone();
+-        messages.clear();
+-        return temp;
++        final ArrayList<JsonObject> drainedMessages = new ArrayList<>();
++        JsonObject message;
++        while ((message = messages.poll()) != null) {
++            drainedMessages.add(message);
++        }
++        return drainedMessages;
+     }
+     public void disconnect(){
+         shouldStop.set(true);
+-        webSocketClient.closeConnection(-1, "Scheduled terminate");
+-        webSocketClient.stopTimer();
++        if (webSocketClient != null) {
++            webSocketClient.stopTimer();
++            webSocketClient.closeConnection(-1, "Scheduled terminate");
++        }
+     }
+ }
+diff --git a/extractor/src/main/java/org/schabi/newpipe/extractor/services/bilibili/extractors/BilibiliBulletCommentsExtractor.java b/extractor/src/main/java/org/schabi/newpipe/extractor/services/bilibili/extractors/BilibiliBulletCommentsExtractor.java
+index 8a4c949..1e81721 100644
+--- a/extractor/src/main/java/org/schabi/newpipe/extractor/services/bilibili/extractors/BilibiliBulletCommentsExtractor.java
++++ b/extractor/src/main/java/org/schabi/newpipe/extractor/services/bilibili/extractors/BilibiliBulletCommentsExtractor.java
+@@ -115,7 +115,9 @@ public class BilibiliBulletCommentsExtractor extends BulletCommentsExtractor {
+ 
+     @Override
+     public void disconnect() {
+-        webSocketClient.disconnect();
++        if (webSocketClient != null) {
++            webSocketClient.disconnect();
++        }
+     }
+ 
+     @Override
+diff --git a/extractor/src/main/java/org/schabi/newpipe/extractor/services/bilibili/extractors/BilibiliChannelExtractor.java b/extractor/src/main/java/org/schabi/newpipe/extractor/services/bilibili/extractors/BilibiliChannelExtractor.java
+index c233103..3815ff4 100644
+--- a/extractor/src/main/java/org/schabi/newpipe/extractor/services/bilibili/extractors/BilibiliChannelExtractor.java
++++ b/extractor/src/main/java/org/schabi/newpipe/extractor/services/bilibili/extractors/BilibiliChannelExtractor.java
+@@ -13,6 +13,7 @@ import org.schabi.newpipe.extractor.ServiceList;
+ import org.schabi.newpipe.extractor.StreamingService;
+ import org.schabi.newpipe.extractor.channel.ChannelExtractor;
+ import org.schabi.newpipe.extractor.downloader.Downloader;
++import org.schabi.newpipe.extractor.downloader.Response;
+ import org.schabi.newpipe.extractor.exceptions.ExtractionException;
+ import org.schabi.newpipe.extractor.exceptions.ParsingException;
+ import org.schabi.newpipe.extractor.exceptions.ReCaptchaException;
+@@ -550,11 +551,12 @@ public class BilibiliChannelExtractor extends ChannelExtractor {
+         String responseBody = "";
+ 
+         while (currentTry > 0) {
+-            responseBody = downloader.get(url, headers).responseBody();
+-            if (responseBody.startsWith("<!DOCTYPE html>")) {
+-                // returns HTML, due to risk control
+-                DeviceForger.regenerateRandomDevice(); // try to regenerate a new one
++            final Response response = downloader.get(url, headers);
++            responseBody = response.responseBody();
++            if (response.responseCode() == 412 || looksLikeRiskControlHtml(responseBody)) {
+                 currentTry -= 1;
++                refreshAntiBotState();
++                headers = getHeadersFromCurrentReferer(headers, url);
+                 continue;
+             }
+             try {
+@@ -562,8 +564,8 @@ public class BilibiliChannelExtractor extends ChannelExtractor {
+                 long code = responseJson.getLong("code");
+                 if (code != 0) {
+                     if (code == -352) {
+-                        // blocked risk control
+-                        DeviceForger.regenerateRandomDevice(); // try to regenerate a new one
++                        refreshAntiBotState();
++                        headers = getHeadersFromCurrentReferer(headers, url);
+                     }
+                     currentTry -= 1;
+                 } else {
+@@ -581,8 +583,33 @@ public class BilibiliChannelExtractor extends ChannelExtractor {
+                 + "\nTry to refresh, or report this!\n"
+                 + responseBody;
+         rotateVideoApiMode();
+-        DeviceForger.regenerateRandomDevice(); // try to regenerate a new one
++        refreshAntiBotState();
+         throw new ParsingException(msg);
+     }
+ 
++    private static void refreshAntiBotState() {
++        DeviceForger.regenerateRandomDevice();
++        BilibiliService.invalidateDefaultCookies();
++    }
++
++    private static boolean looksLikeRiskControlHtml(final String responseBody) {
++        return responseBody != null
++                && (responseBody.startsWith("<!DOCTYPE html>")
++                || responseBody.contains("错误号: 412")
++                || responseBody.contains("security control policy")
++                || responseBody.contains("The request was rejected because of the bilibili")
++                || responseBody.contains("由于触发哔哩哔哩安全风控策略"));
++    }
++
++    private static Map<String, List<String>> getHeadersFromCurrentReferer(
++            final Map<String, List<String>> previousHeaders,
++            final String requestUrl) throws IOException {
++        final List<String> referers = previousHeaders == null
++                ? null : previousHeaders.get("Referer");
++        if (referers != null && !referers.isEmpty()) {
++            return getHeaders(referers.get(0));
++        }
++        return getHeaders(requestUrl);
++    }
++
+ }

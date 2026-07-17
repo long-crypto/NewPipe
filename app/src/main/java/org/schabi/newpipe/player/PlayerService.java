@@ -21,9 +21,15 @@ package org.schabi.newpipe.player;
 
 import android.content.Context;
 import android.content.Intent;
+import android.net.ConnectivityManager;
+import android.net.Network;
+import android.net.NetworkCapabilities;
 import android.os.Binder;
+import android.os.Build;
 import android.os.Bundle;
+import android.os.Handler;
 import android.os.IBinder;
+import android.os.Looper;
 import android.support.v4.media.MediaBrowserCompat;
 import android.support.v4.media.session.MediaSessionCompat;
 import android.util.Log;
@@ -41,10 +47,14 @@ import org.schabi.newpipe.player.mediabrowser.MediaBrowserPlaybackPreparer;
 import org.schabi.newpipe.player.mediasession.MediaSessionPlayerUi;
 import org.schabi.newpipe.player.notification.NotificationPlayerUi;
 import org.schabi.newpipe.player.notification.NotificationUtil;
+import org.schabi.newpipe.player.playqueue.PlayQueue;
+import org.schabi.newpipe.player.playqueue.PlayQueueItem;
+import org.schabi.newpipe.util.InfoCache;
 import org.schabi.newpipe.util.ThemeHelper;
 
 import java.lang.ref.WeakReference;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 
 
@@ -54,6 +64,7 @@ import java.util.function.Consumer;
 public final class PlayerService extends MediaBrowserServiceCompat {
     private static final String TAG = PlayerService.class.getSimpleName();
     private static final boolean DEBUG = Player.DEBUG;
+    private static final long NETWORK_REFRESH_DEBOUNCE_MS = TimeUnit.SECONDS.toMillis(1);
 
     public static final String SHOULD_START_FOREGROUND_EXTRA = "should_start_foreground_extra";
     public static final String BIND_PLAYER_HOLDER_ACTION = "bind_player_holder_action";
@@ -68,6 +79,15 @@ public final class PlayerService extends MediaBrowserServiceCompat {
     // https://developer.android.com/training/cars/media#browser_workflow
     private MediaSessionCompat mediaSession;
     private MediaSessionConnector sessionConnector;
+
+    @Nullable
+    private ConnectivityManager connectivityManager;
+    @Nullable
+    private ConnectivityManager.NetworkCallback networkCallback;
+    @Nullable
+    private Network observedDefaultNetwork;
+    private final Handler mainHandler = new Handler(Looper.getMainLooper());
+    private final Runnable networkRefreshRunnable = this::refreshPlayerAfterNetworkChange;
 
     @Nullable
     private Player player;
@@ -93,6 +113,7 @@ public final class PlayerService extends MediaBrowserServiceCompat {
         ThemeHelper.setTheme(this);
 
         mediaBrowserImpl = new MediaBrowserImpl(this, this::notifyChildrenChanged);
+        registerNetworkCallback();
 
         // see https://developer.android.com/training/cars/media#browser_workflow
         mediaSession = new MediaSessionCompat(this, "MediaSessionPlayerServ");
@@ -208,6 +229,8 @@ public final class PlayerService extends MediaBrowserServiceCompat {
         if (DEBUG) {
             Log.d(TAG, "destroy() called");
         }
+        unregisterNetworkCallback();
+        mainHandler.removeCallbacksAndMessages(null);
         super.onDestroy();
 
         cleanup();
@@ -262,6 +285,71 @@ public final class PlayerService extends MediaBrowserServiceCompat {
     protected void attachBaseContext(final Context base) {
         super.attachBaseContext(AudioServiceLeakFix.preventLeakOf(base));
     }
+
+    private void registerNetworkCallback() {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.N) {
+            return;
+        }
+        connectivityManager = (ConnectivityManager) getSystemService(
+                Context.CONNECTIVITY_SERVICE);
+        if (connectivityManager == null) {
+            Log.w(TAG, "Could not register network callback: ConnectivityManager unavailable");
+            return;
+        }
+        networkCallback = new ConnectivityManager.NetworkCallback() {
+            @Override
+            public void onCapabilitiesChanged(@NonNull final Network network,
+                                               @NonNull final NetworkCapabilities capabilities) {
+                if (!capabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_VALIDATED)
+                        || observedDefaultNetwork == null) {
+                    if (capabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_VALIDATED)) {
+                        observedDefaultNetwork = network;
+                    }
+                    return;
+                }
+                if (observedDefaultNetwork.equals(network)) {
+                    return;
+                }
+                observedDefaultNetwork = network;
+                mainHandler.removeCallbacks(networkRefreshRunnable);
+                mainHandler.postDelayed(networkRefreshRunnable, NETWORK_REFRESH_DEBOUNCE_MS);
+            }
+        };
+        try {
+            connectivityManager.registerDefaultNetworkCallback(networkCallback);
+        } catch (final RuntimeException e) {
+            networkCallback = null;
+            Log.w(TAG, "Could not register default network callback", e);
+        }
+    }
+
+    private void unregisterNetworkCallback() {
+        if (connectivityManager != null && networkCallback != null) {
+            try {
+                connectivityManager.unregisterNetworkCallback(networkCallback);
+            } catch (final RuntimeException e) {
+                Log.w(TAG, "Could not unregister default network callback", e);
+            }
+        }
+        networkCallback = null;
+        connectivityManager = null;
+        observedDefaultNetwork = null;
+    }
+
+    private void refreshPlayerAfterNetworkChange() {
+        if (player == null) {
+            return;
+        }
+        final PlayQueue playQueue = player.getPlayQueue();
+        final PlayQueueItem currentItem = playQueue == null ? null : playQueue.getItem();
+        if (currentItem != null) {
+            InfoCache.getInstance().removeInfo(currentItem.getServiceId(), currentItem.getUrl(),
+                    InfoCache.Type.STREAM);
+        }
+        player.setRecovery();
+        player.reloadPlayQueueManager();
+    }
+
     //endregion
 
     //region Bind

@@ -70,6 +70,7 @@ import org.schabi.newpipe.extractor.stream.VideoStream;
 import org.schabi.newpipe.fragments.detail.VideoDetailFragment;
 import org.schabi.newpipe.ktx.AnimationType;
 import org.schabi.newpipe.player.Player;
+import org.schabi.newpipe.player.bullet.BulletCommentsController;
 import org.schabi.newpipe.player.gesture.BasePlayerGestureListener;
 import org.schabi.newpipe.player.gesture.DisplayPortion;
 import org.schabi.newpipe.player.helper.PlayerHelper;
@@ -149,6 +150,8 @@ public abstract class VideoPlayerUi extends PlayerUi implements SeekBar.OnSeekBa
     @NonNull
     private final SeekbarPreviewThumbnailHolder seekbarPreviewThumbnailHolder =
             new SeekbarPreviewThumbnailHolder();
+    @NonNull
+    private final BulletCommentsController bulletCommentsController;
 
 
     /*//////////////////////////////////////////////////////////////////////////
@@ -160,6 +163,7 @@ public abstract class VideoPlayerUi extends PlayerUi implements SeekBar.OnSeekBa
                             @NonNull final PlayerBinding playerBinding) {
         super(player);
         binding = playerBinding;
+        bulletCommentsController = new BulletCommentsController(binding.bulletCommentsOverlay);
         setupFromView();
     }
 
@@ -428,6 +432,7 @@ public abstract class VideoPlayerUi extends PlayerUi implements SeekBar.OnSeekBa
 
     @Override
     public void destroy() {
+        bulletCommentsController.destroy();
         super.destroy();
         binding.endScreen.setImageDrawable(null);
         deinitPlayerSeekOverlay();
@@ -550,6 +555,7 @@ public abstract class VideoPlayerUi extends PlayerUi implements SeekBar.OnSeekBa
                     + "duration = [" + duration + "], bufferPercent = [" + bufferPercent + "]");
         }
         binding.playbackLiveSync.setClickable(!player.isLiveEdge());
+        bulletCommentsController.onProgress(currentProgress);
     }
 
     /**
@@ -816,6 +822,7 @@ public abstract class VideoPlayerUi extends PlayerUi implements SeekBar.OnSeekBa
     @Override
     public void onBlocked() {
         super.onBlocked();
+        bulletCommentsController.onPlaybackInterrupted();
 
         // if we are e.g. switching players, hide controls
         hideControls(DEFAULT_CONTROLS_DURATION, 0);
@@ -835,6 +842,7 @@ public abstract class VideoPlayerUi extends PlayerUi implements SeekBar.OnSeekBa
     @Override
     public void onPlaying() {
         super.onPlaying();
+        bulletCommentsController.onPlaybackResumed();
 
         updateStreamRelatedViews();
 
@@ -868,6 +876,7 @@ public abstract class VideoPlayerUi extends PlayerUi implements SeekBar.OnSeekBa
     @Override
     public void onPaused() {
         super.onPaused();
+        bulletCommentsController.onPlaybackInterrupted();
 
         // Don't let UI elements popup during double tap seeking. This state is entered sometimes
         // during seeking/loading. This if-else check ensures that the controls aren't popping up.
@@ -891,6 +900,7 @@ public abstract class VideoPlayerUi extends PlayerUi implements SeekBar.OnSeekBa
     @Override
     public void onPausedSeek() {
         super.onPausedSeek();
+        bulletCommentsController.onPlaybackInterrupted();
         animatePlayButtons(false, 100);
         binding.getRoot().setKeepScreenOn(true);
     }
@@ -898,6 +908,7 @@ public abstract class VideoPlayerUi extends PlayerUi implements SeekBar.OnSeekBa
     @Override
     public void onCompleted() {
         super.onCompleted();
+        bulletCommentsController.onPlaybackInterrupted();
 
         animate(binding.playPauseButton, false, 0, AnimationType.SCALE_AND_ALPHA, 0,
                 () -> {
@@ -1047,6 +1058,7 @@ public abstract class VideoPlayerUi extends PlayerUi implements SeekBar.OnSeekBa
         binding.channelTextView.setText(info.getUploaderName());
 
         this.seekbarPreviewThumbnailHolder.resetFrom(player.getContext(), info.getPreviewFrames());
+        bulletCommentsController.load(info);
     }
 
     private void updateStreamRelatedViews() {

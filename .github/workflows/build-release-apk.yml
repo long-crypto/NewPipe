@@ -35,8 +35,7 @@ jobs:
           git -C external/NewPipeExtractor remote get-url origin | grep -q "github.com/InfinityLoop1308/PipePipeExtractor"
           test "$(git -C external/NewPipeExtractor rev-parse HEAD)" = "b974fde4a4586ae6111aa39c3132b9d1e331d90c"
           test -d external/NewPipeExtractor/extractor
-          grep -n "JavaLanguageVersion.of(21)" external/NewPipeExtractor/build.gradle
-          grep -n "options.release = 21" external/NewPipeExtractor/build.gradle
+          bash .github/scripts/verify-pipepipe-extractor.sh external/NewPipeExtractor
 
       - name: Clean PipePipeExtractor outputs
         run: |
