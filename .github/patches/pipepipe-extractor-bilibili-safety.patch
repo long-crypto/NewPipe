@@ -43,6 +43,15 @@ index bbbfbe5..3903571 100644
      static public LinkedHashMap<String, List<String>> getHeaders(String originalUrl) throws IOException {
          LinkedHashMap<String, List<String>> headers = getUserAgentHeaders(originalUrl);
          String cookie = mapToCookieHeader(getDefaultCookies());
+@@ -391,7 +397,7 @@ public class BilibiliService extends StreamingService {
+ 
+     @Override
+     public long getFeedFetchInterval() {
+-        return 10000;
++        return 5000;
+     }
+ 
+     @Override
 diff --git a/extractor/src/main/java/org/schabi/newpipe/extractor/services/bilibili/BilibiliWebSocketClient.java b/extractor/src/main/java/org/schabi/newpipe/extractor/services/bilibili/BilibiliWebSocketClient.java
 index 4f2ec91..03fc8f9 100644
 --- a/extractor/src/main/java/org/schabi/newpipe/extractor/services/bilibili/BilibiliWebSocketClient.java
