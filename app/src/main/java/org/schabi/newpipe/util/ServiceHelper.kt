@@ -18,6 +18,7 @@ import org.schabi.newpipe.extractor.NewPipe
 import org.schabi.newpipe.extractor.ServiceList
 import org.schabi.newpipe.extractor.StreamingService
 import org.schabi.newpipe.extractor.services.peertube.PeertubeInstance
+import org.schabi.newpipe.extractor.sponsorblock.SponsorBlockApiSettings
 import org.schabi.newpipe.ktx.getStringSafe
 
 object ServiceHelper {
@@ -220,6 +221,20 @@ object ServiceHelper {
 
     @JvmStatic
     fun initServices(context: Context) {
-        ServiceList.all().forEach { initService(context, it.serviceId) }
+        val preferences = PreferenceManager.getDefaultSharedPreferences(context)
+        val sponsorBlockSettings = if (preferences.getBoolean(
+                context.getString(R.string.sponsor_block_enable_key),
+                false
+            )
+        ) {
+            SponsorBlockApiSettings().apply { includeSponsorCategory = true }
+        } else {
+            null
+        }
+
+        ServiceList.all().forEach {
+            initService(context, it.serviceId)
+            it.sponsorBlockApiSettings = sponsorBlockSettings
+        }
     }
 }

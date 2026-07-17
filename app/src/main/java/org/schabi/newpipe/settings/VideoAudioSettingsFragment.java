@@ -14,6 +14,7 @@ import com.google.android.material.snackbar.Snackbar;
 import org.schabi.newpipe.R;
 import org.schabi.newpipe.util.ListHelper;
 import org.schabi.newpipe.util.PermissionHelper;
+import org.schabi.newpipe.util.ServiceHelper;
 
 import java.util.LinkedList;
 import java.util.List;
@@ -49,6 +50,8 @@ public class VideoAudioSettingsFragment extends BasePreferenceFragment {
                 updateSeekOptions();
             } else if (getString(R.string.show_higher_resolutions_key).equals(key)) {
                 updateResolutionOptions();
+            } else if (getString(R.string.sponsor_block_enable_key).equals(key)) {
+                ServiceHelper.initServices(requireContext());
             }
         };
     }

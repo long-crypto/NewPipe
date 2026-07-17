@@ -89,6 +89,8 @@ import org.schabi.newpipe.error.ErrorInfo;
 import org.schabi.newpipe.error.ErrorUtil;
 import org.schabi.newpipe.error.UserAction;
 import org.schabi.newpipe.extractor.Image;
+import org.schabi.newpipe.extractor.sponsorblock.SponsorBlockAction;
+import org.schabi.newpipe.extractor.sponsorblock.SponsorBlockSegment;
 import org.schabi.newpipe.extractor.stream.AudioStream;
 import org.schabi.newpipe.extractor.stream.StreamInfo;
 import org.schabi.newpipe.extractor.stream.StreamType;
@@ -176,6 +178,7 @@ public final class Player implements PlaybackListener, Listener {
 
     public static final int PLAY_PREV_ACTIVATION_LIMIT_MILLIS = 5000; // 5 seconds
     public static final int PROGRESS_LOOP_INTERVAL_MILLIS = 1000; // 1 second
+    private static final int SPONSOR_BLOCK_SKIP_GRACE_MILLIS = 1000;
 
     /*//////////////////////////////////////////////////////////////////////////
     // Other constants
@@ -269,6 +272,9 @@ public final class Player implements PlaybackListener, Listener {
     private final HistoryRecordManager recordManager;
 
     private boolean screenOn = true;
+    private SponsorBlockSegment[] sponsorBlockSegments = new SponsorBlockSegment[0];
+    @Nullable
+    private SponsorBlockSegment lastSkippedSponsorBlockSegment;
 
     /*//////////////////////////////////////////////////////////////////////////
     // Constructor
@@ -1019,7 +1025,9 @@ public final class Player implements PlaybackListener, Listener {
             return;
         }
 
-        onUpdateProgress(Math.max((int) simpleExoPlayer.getCurrentPosition(), 0),
+        final int currentProgress = Math.max((int) simpleExoPlayer.getCurrentPosition(), 0);
+        maybeSkipSponsorBlockSegment(currentProgress);
+        onUpdateProgress(currentProgress,
                 (int) simpleExoPlayer.getDuration(), simpleExoPlayer.getBufferedPercentage());
     }
 
@@ -1029,6 +1037,38 @@ public final class Player implements PlaybackListener, Listener {
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(ignored -> triggerProgressUpdate(),
                         error -> Log.e(TAG, "Progress update failure: ", error));
+    }
+
+    private void maybeSkipSponsorBlockSegment(final int currentProgress) {
+        if (!isPrepared || !isPlaying()
+                || !prefs.getBoolean(context.getString(R.string.sponsor_block_enable_key), false)) {
+            return;
+        }
+
+        if (lastSkippedSponsorBlockSegment != null
+                && (currentProgress < lastSkippedSponsorBlockSegment.startTime
+                - SPONSOR_BLOCK_SKIP_GRACE_MILLIS
+                || currentProgress > lastSkippedSponsorBlockSegment.endTime
+                + SPONSOR_BLOCK_SKIP_GRACE_MILLIS)) {
+            lastSkippedSponsorBlockSegment = null;
+        }
+
+        for (final SponsorBlockSegment segment : sponsorBlockSegments) {
+            if (segment.action != SponsorBlockAction.SKIP
+                    || !Double.isFinite(segment.startTime)
+                    || !Double.isFinite(segment.endTime)
+                    || segment.endTime <= segment.startTime
+                    || currentProgress < segment.startTime
+                    || currentProgress >= segment.endTime
+                    || lastSkippedSponsorBlockSegment != null
+                    && Objects.equals(lastSkippedSponsorBlockSegment.uuid, segment.uuid)) {
+                continue;
+            }
+
+            lastSkippedSponsorBlockSegment = segment;
+            seekTo((long) Math.ceil(segment.endTime));
+            return;
+        }
     }
 
     //endregion
@@ -1912,6 +1952,9 @@ public final class Player implements PlaybackListener, Listener {
         if (exoPlayerIsNull()) {
             return;
         }
+
+        sponsorBlockSegments = info.getSponsorBlockSegments();
+        lastSkippedSponsorBlockSegment = null;
 
         maybeAutoQueueNextStream(info);
 
