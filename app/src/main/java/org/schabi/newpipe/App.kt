@@ -14,8 +14,6 @@ import coil3.network.okhttp.OkHttpNetworkFetcherFactory
 import coil3.request.allowRgb565
 import coil3.request.crossfade
 import coil3.util.DebugLogger
-import com.google.android.material.color.DynamicColors
-import com.google.android.material.color.DynamicColorsOptions
 import com.jakewharton.processphoenix.ProcessPhoenix
 import io.reactivex.rxjava3.exceptions.CompositeException
 import io.reactivex.rxjava3.exceptions.MissingBackpressureException
@@ -38,7 +36,6 @@ import org.schabi.newpipe.util.BridgeStateSaverInitializer
 import org.schabi.newpipe.util.Localization
 import org.schabi.newpipe.util.ServiceHelper
 import org.schabi.newpipe.util.StateSaver
-import org.schabi.newpipe.util.ThemeHelper
 import org.schabi.newpipe.util.image.ImageStrategy
 import org.schabi.newpipe.util.image.PreferredImageQuality
 
@@ -96,7 +93,6 @@ open class App :
 
         // Initialize settings first because other initializations can use its values
         NewPipeSettings.initSettings(this)
-        applyDynamicColorsIfAvailable()
 
         NewPipe.init(
             getDownloader(),
@@ -124,13 +120,6 @@ open class App :
         )
 
         configureRxJavaErrorHandler()
-    }
-
-    private fun applyDynamicColorsIfAvailable() {
-        val dynamicColorsOptions = DynamicColorsOptions.Builder()
-            .setPrecondition { activity, _ -> ThemeHelper.shouldApplyDynamicColors(activity) }
-            .build()
-        DynamicColors.applyToActivitiesIfAvailable(this, dynamicColorsOptions)
     }
 
     override fun newImageLoader(context: Context): ImageLoader = ImageLoader

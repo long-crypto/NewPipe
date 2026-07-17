@@ -3,7 +3,6 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="wrap_content"
     android:layout_height="wrap_content"
-    android:background="@drawable/state_panel_background"
     android:gravity="center_horizontal"
     android:orientation="vertical"
     android:padding="16dp">
@@ -14,7 +13,6 @@
         android:layout_height="wrap_content"
         android:gravity="center"
         android:text="@string/general_error"
-        android:textColor="?attr/colorOnSurface"
         android:textSize="16sp"
         android:textStyle="bold"
         tools:text="Account terminated" />
@@ -26,7 +24,6 @@
         android:layout_marginTop="6dp"
         android:gravity="center"
         android:text="@string/general_error"
-        android:textColor="?attr/colorOnSurfaceVariant"
         android:textSize="16sp"
         android:visibility="gone"
         tools:text="YouTube provides this reason:"
@@ -39,7 +36,6 @@
         android:layout_marginTop="4dp"
         android:gravity="center"
         android:text="@string/general_error"
-        android:textColor="?attr/colorOnSurfaceVariant"
         android:textSize="16sp"
         android:textStyle="italic"
         android:visibility="gone"
@@ -57,7 +53,7 @@
         android:textAllCaps="true"
         android:textAppearance="@style/TextAppearance.AppCompat.Body1"
         android:textSize="16sp"
-        android:theme="@style/MaterialStateActionButton"
+        android:theme="@style/ServiceColoredButton"
         android:visibility="gone"
         tools:visibility="visible" />
 
@@ -71,7 +67,7 @@
         android:textAllCaps="true"
         android:textAppearance="@style/TextAppearance.AppCompat.Body1"
         android:textSize="16sp"
-        android:theme="@style/MaterialStateActionButton"
+        android:theme="@style/ServiceColoredButton"
         android:visibility="gone"
         tools:visibility="visible" />
 
@@ -86,7 +82,7 @@
         android:textAllCaps="true"
         android:textAppearance="@style/TextAppearance.AppCompat.Body1"
         android:textSize="16sp"
-        android:theme="@style/MaterialStateActionButton"
+        android:theme="@style/ServiceColoredButton"
         android:visibility="gone"
         tools:visibility="visible" />
 

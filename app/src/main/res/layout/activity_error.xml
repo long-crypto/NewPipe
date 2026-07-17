@@ -3,7 +3,6 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="?attr/colorSurface"
     tools:context=".error.ErrorActivity">
 
     <include
@@ -14,8 +13,7 @@
         android:id="@+id/scrollView"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:layout_marginTop="?attr/actionBarSize"
-        android:background="?attr/colorSurface">
+        android:layout_marginTop="?attr/actionBarSize">
 
         <LinearLayout
             android:layout_width="match_parent"
@@ -35,7 +33,6 @@
                 android:gravity="center"
                 android:text="@string/sorry_string"
                 android:textAppearance="?android:attr/textAppearanceLarge"
-                android:textColor="?attr/colorOnSurface"
                 android:textStyle="bold" />
 
             <org.schabi.newpipe.views.NewPipeTextView
@@ -43,23 +40,21 @@
                 android:layout_height="wrap_content"
                 android:paddingTop="@dimen/activity_vertical_margin"
                 android:text="@string/what_happened_headline"
-                android:textAppearance="?android:attr/textAppearanceMedium"
-                android:textColor="?attr/colorOnSurface" />
+                android:textAppearance="?android:attr/textAppearanceMedium" />
 
             <org.schabi.newpipe.views.NewPipeTextView
                 android:id="@+id/errorMessageView"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="@string/info_labels"
-                android:textColor="?attr/colorOnSurfaceVariant" />
+                android:textColor="?attr/colorAccent" />
 
             <org.schabi.newpipe.views.NewPipeTextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:paddingTop="@dimen/activity_vertical_margin"
                 android:text="@string/what_device_headline"
-                android:textAppearance="?android:attr/textAppearanceMedium"
-                android:textColor="?attr/colorOnSurface" />
+                android:textAppearance="?android:attr/textAppearanceMedium" />
 
             <LinearLayout
                 android:layout_width="match_parent"
@@ -71,7 +66,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="@string/info_labels"
-                    android:textColor="?attr/colorOnSurfaceVariant" />
+                    android:textColor="?attr/colorAccent" />
 
                 <HorizontalScrollView
                     android:layout_width="match_parent"
@@ -81,8 +76,7 @@
                     <org.schabi.newpipe.views.NewPipeTextView
                         android:id="@+id/errorInfosView"
                         android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:textColor="?attr/colorOnSurfaceVariant" />
+                        android:layout_height="wrap_content" />
 
                 </HorizontalScrollView>
 
@@ -93,8 +87,7 @@
                 android:layout_height="wrap_content"
                 android:paddingTop="@dimen/activity_vertical_margin"
                 android:text="@string/error_details_headline"
-                android:textAppearance="?android:attr/textAppearanceMedium"
-                android:textColor="?attr/colorOnSurface" />
+                android:textAppearance="?android:attr/textAppearanceMedium" />
 
             <HorizontalScrollView
                 android:layout_width="match_parent"
@@ -106,7 +99,6 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:textIsSelectable="true"
-                    android:textColor="?attr/colorOnSurfaceVariant"
                     android:typeface="monospace" />
             </HorizontalScrollView>
 
@@ -115,16 +107,13 @@
                 android:layout_height="wrap_content"
                 android:paddingTop="@dimen/activity_vertical_margin"
                 android:text="@string/your_comment"
-                android:textAppearance="?android:attr/textAppearanceMedium"
-                android:textColor="?attr/colorOnSurface" />
+                android:textAppearance="?android:attr/textAppearanceMedium" />
 
             <org.schabi.newpipe.views.NewPipeEditText
                 android:id="@+id/errorCommentBox"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:inputType=""
-                android:textColor="?attr/colorOnSurface"
-                android:textColorHint="?attr/colorOnSurfaceVariant" />
+                android:inputType="" />
 
             <Button
                 android:id="@+id/errorReportEmailButton"
@@ -138,7 +127,6 @@
                 android:layout_marginTop="10dp"
                 android:layout_marginBottom="5dp"
                 android:text="@string/error_report_open_github_notice"
-                android:textColor="?attr/colorOnSurfaceVariant"
                 android:textStyle="bold" />
 
             <Button

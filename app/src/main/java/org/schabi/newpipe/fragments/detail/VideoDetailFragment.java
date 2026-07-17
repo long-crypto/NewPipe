@@ -38,7 +38,6 @@ import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.ViewTreeObserver;
-import android.view.WindowInsetsController;
 import android.view.WindowManager;
 import android.view.animation.DecelerateInterpolator;
 import android.widget.FrameLayout;
@@ -1996,64 +1995,10 @@ public final class VideoDetailFragment
             activity.getWindow().getAttributes().layoutInDisplayCutoutMode =
                     WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_DEFAULT;
         }
-        activity.getWindow().getDecorView().setSystemUiVisibility(getSystemUiVisibility());
-        restoreSystemBarAppearance();
+        activity.getWindow().getDecorView().setSystemUiVisibility(0);
         activity.getWindow().clearFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN);
-        final int statusBarColor = ThemeHelper.resolveColorFromAttr(requireContext(),
-                android.R.attr.statusBarColor);
-        final int navigationBarColor = ThemeHelper.resolveColorFromAttr(requireContext(),
-                android.R.attr.navigationBarColor);
-        activity.getWindow().setStatusBarColor(statusBarColor);
-        activity.getWindow().setNavigationBarColor(navigationBarColor);
-    }
-
-    private int getSystemUiVisibility() {
-        int visibility = 0;
-
-        if (ThemeHelper.isLightThemeSelected(activity)) {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                visibility |= View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR;
-            }
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                visibility |= View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR;
-            }
-        }
-
-        return visibility;
-    }
-
-    private void restoreSystemBarAppearance() {
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R) {
-            return;
-        }
-
-        final WindowInsetsController windowInsetsController =
-                activity.getWindow().getInsetsController();
-        if (windowInsetsController == null) {
-            return;
-        }
-
-        final int lightSystemBars = WindowInsetsController.APPEARANCE_LIGHT_STATUS_BARS
-                | WindowInsetsController.APPEARANCE_LIGHT_NAVIGATION_BARS;
-        windowInsetsController.setSystemBarsAppearance(
-                ThemeHelper.isLightThemeSelected(activity) ? lightSystemBars : 0,
-                lightSystemBars);
-    }
-
-    private void clearLightSystemBarAppearance() {
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R) {
-            return;
-        }
-
-        final WindowInsetsController windowInsetsController =
-                activity.getWindow().getInsetsController();
-        if (windowInsetsController == null) {
-            return;
-        }
-
-        final int lightSystemBars = WindowInsetsController.APPEARANCE_LIGHT_STATUS_BARS
-                | WindowInsetsController.APPEARANCE_LIGHT_NAVIGATION_BARS;
-        windowInsetsController.setSystemBarsAppearance(0, lightSystemBars);
+        activity.getWindow().setStatusBarColor(ThemeHelper.resolveColorFromAttr(
+                requireContext(), android.R.attr.colorPrimary));
     }
 
     private void hideSystemUi() {
@@ -2083,7 +2028,6 @@ public final class VideoDetailFragment
             visibility |= View.SYSTEM_UI_FLAG_FULLSCREEN;
         }
         activity.getWindow().getDecorView().setSystemUiVisibility(visibility);
-        clearLightSystemBarAppearance();
 
         if (isInMultiWindow || isFullscreen()) {
             activity.getWindow().setStatusBarColor(Color.TRANSPARENT);

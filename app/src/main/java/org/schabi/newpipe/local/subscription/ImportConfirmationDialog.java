@@ -5,6 +5,7 @@ import android.os.Bundle;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.appcompat.app.AlertDialog;
 import androidx.core.os.BundleCompat;
 import androidx.fragment.app.DialogFragment;
 import androidx.fragment.app.Fragment;
@@ -17,7 +18,6 @@ import androidx.work.WorkManager;
 
 import com.livefront.bridge.Bridge;
 
-import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import org.schabi.newpipe.R;
 import org.schabi.newpipe.local.subscription.workers.SubscriptionImportInput;
 import org.schabi.newpipe.local.subscription.workers.SubscriptionImportWorker;
@@ -37,7 +37,7 @@ public class ImportConfirmationDialog extends DialogFragment {
     @Override
     public Dialog onCreateDialog(@Nullable final Bundle savedInstanceState) {
         final var context = requireContext();
-        return new MaterialAlertDialogBuilder(context)
+        return new AlertDialog.Builder(context)
                 .setMessage(R.string.import_network_expensive_warning)
                 .setCancelable(true)
                 .setNegativeButton(R.string.cancel, null)

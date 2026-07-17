@@ -4,7 +4,6 @@
         xmlns:app="http://schemas.android.com/apk/res-auto"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:background="?attr/colorSurface"
         android:paddingTop="16dp">
 
     <org.schabi.newpipe.views.NewPipeTextView
@@ -17,7 +16,6 @@
         android:focusable="false"
         android:gravity="center"
         android:text="@string/notification_actions_summary"
-        android:textColor="?attr/colorOnSurfaceVariant"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.0"
         app:layout_constraintStart_toStartOf="parent"

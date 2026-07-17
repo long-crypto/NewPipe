@@ -15,7 +15,7 @@
         android:minHeight="24dp"
         android:paddingHorizontal="16dp"
         android:paddingVertical="12dp"
-        android:textColor="?attr/colorPrimary"
+        android:textColor="?android:attr/textColorPrimary"
         android:textSize="16sp"
         android:textStyle="bold"
         tools:text="Header" />
@@ -27,7 +27,6 @@
         android:background="?attr/selectableItemBackgroundBorderless"
         android:contentDescription="@string/list_view_mode"
         android:padding="8dp"
-        android:tint="?attr/colorOnSurfaceVariant"
         tools:src="@drawable/ic_apps" />
 
     <ImageButton
@@ -38,6 +37,5 @@
         android:background="?attr/selectableItemBackgroundBorderless"
         android:contentDescription="@string/sort"
         android:padding="8dp"
-        android:src="@drawable/ic_sort"
-        android:tint="?attr/colorOnSurfaceVariant" />
+        android:src="@drawable/ic_sort" />
 </LinearLayout>

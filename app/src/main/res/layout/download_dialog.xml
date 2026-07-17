@@ -1,8 +1,7 @@
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    android:background="?attr/colorSurface">
+    android:layout_height="match_parent">
 
     <include
         android:id="@+id/toolbar_layout"
@@ -17,8 +16,7 @@
         android:layout_marginTop="12dp"
         android:layout_marginRight="24dp"
         android:layout_marginBottom="6dp"
-        android:text="@string/msg_name"
-        android:textColor="?attr/colorOnSurfaceVariant" />
+        android:text="@string/msg_name" />
 
     <org.schabi.newpipe.views.NewPipeEditText
         android:id="@+id/file_name"
@@ -29,9 +27,6 @@
         android:layout_marginRight="20dp"
         android:layout_marginBottom="6dp"
         android:inputType="text"
-        android:textColor="?attr/colorOnSurface"
-        android:textColorHint="?attr/colorOnSurfaceVariant"
-        android:backgroundTint="?attr/colorPrimary"
         android:maxLines="1" />
 
     <RadioGroup
@@ -49,8 +44,6 @@
             android:id="@+id/video_button"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:buttonTint="@color/download_control_tint"
-            android:textColor="@color/download_option_text_color"
             android:checked="true"
             android:text="@string/video" />
 
@@ -58,16 +51,12 @@
             android:id="@+id/audio_button"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:buttonTint="@color/download_control_tint"
-            android:textColor="@color/download_option_text_color"
             android:text="@string/audio" />
 
         <RadioButton
             android:id="@+id/subtitle_button"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:buttonTint="@color/download_control_tint"
-            android:textColor="@color/download_option_text_color"
             android:text="@string/caption_setting_title" />
     </RadioGroup>
 
@@ -114,7 +103,6 @@
         android:layout_marginBottom="12dp"
         android:gravity="center"
         android:text="@string/audio_track_present_in_video"
-        android:textColor="?attr/colorOnSurfaceVariant"
         android:textSize="12sp" />
 
     <org.schabi.newpipe.views.NewPipeTextView
@@ -125,8 +113,7 @@
         android:layout_marginLeft="24dp"
         android:layout_marginRight="24dp"
         android:layout_marginBottom="6dp"
-        android:text="@string/msg_threads"
-        android:textColor="?attr/colorOnSurfaceVariant" />
+        android:text="@string/msg_threads" />
 
     <LinearLayout
         android:id="@+id/threads_layout"
@@ -144,7 +131,6 @@
             android:layout_height="match_parent"
             android:gravity="center_vertical"
             android:paddingLeft="2dp"
-            android:textColor="?attr/colorOnSurface"
             tools:ignore="RtlHardcoded,RtlSymmetry"
             tools:text="3" />
 
@@ -153,11 +139,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:max="31"
-            android:progress="3"
-            android:progressTint="?attr/colorPrimary"
-            android:progressBackgroundTint="?attr/colorSurfaceVariant"
-            android:secondaryProgressTint="?attr/colorSurfaceVariant"
-            android:thumbTint="?attr/colorPrimary" />
+            android:progress="3" />
     </LinearLayout>
 
     <org.schabi.newpipe.views.NewPipeTextView
@@ -169,7 +151,6 @@
         android:layout_marginBottom="12dp"
         android:gravity="center"
         android:text="@string/streams_not_yet_supported_removed"
-        android:textColor="?attr/colorOnSurfaceVariant"
         android:textSize="12sp" />
 
 </RelativeLayout>

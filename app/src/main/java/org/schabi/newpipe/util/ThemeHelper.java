@@ -21,7 +21,6 @@ package org.schabi.newpipe.util;
 
 import android.app.Activity;
 import android.content.Context;
-import android.content.SharedPreferences;
 import android.content.res.Configuration;
 import android.content.res.Resources;
 import android.graphics.drawable.Drawable;
@@ -38,8 +37,6 @@ import androidx.appcompat.content.res.AppCompatResources;
 import androidx.core.content.ContextCompat;
 import androidx.preference.PreferenceManager;
 
-import com.google.android.material.color.DynamicColors;
-
 import org.schabi.newpipe.R;
 import org.schabi.newpipe.extractor.NewPipe;
 import org.schabi.newpipe.extractor.StreamingService;
@@ -47,8 +44,6 @@ import org.schabi.newpipe.extractor.exceptions.ExtractionException;
 import org.schabi.newpipe.info_list.ItemViewMode;
 
 public final class ThemeHelper {
-    private static final String LEGACY_THEME_COLOR_APP_DEFAULT = "newpipe_material";
-
     private ThemeHelper() {
     }
 
@@ -78,105 +73,6 @@ public final class ThemeHelper {
      */
     public static void setTheme(final Context context, final int serviceId) {
         context.setTheme(getThemeForService(context, serviceId));
-        applyThemeColor(context);
-    }
-
-    /**
-     * Apply the currently selected runtime theme color behavior.
-     *
-     * <p>Follow system uses Material You dynamic colors when available. Manual presets skip
-     * dynamic colors and apply a static Material 3 role overlay instead. Unsupported dynamic-color
-     * devices keep the base static fallback palette.</p>
-     *
-     * @param context context that will receive dynamic colors or a static color overlay
-     */
-    public static void applyThemeColor(final Context context) {
-        if (shouldApplyDynamicColors(context)) {
-            DynamicColors.applyToActivityIfAvailable((Activity) context);
-        } else {
-            applyThemeColorOverlay(context);
-        }
-    }
-
-    /**
-     * Return the selected theme color preference.
-     *
-     * @param context context to get the preference
-     * @return selected theme color preference value
-     */
-    public static String getThemeColorPreference(final Context context) {
-        final SharedPreferences preferences =
-                PreferenceManager.getDefaultSharedPreferences(context);
-        final String key = context.getString(R.string.theme_color_key);
-        final String selectedThemeColor = preferences.getString(
-                key, context.getString(R.string.default_theme_color_value));
-        if (LEGACY_THEME_COLOR_APP_DEFAULT.equals(selectedThemeColor)) {
-            final String appDefault = context.getString(R.string.theme_color_app_default_value);
-            preferences.edit().putString(key, appDefault).apply();
-            return appDefault;
-        }
-        return selectedThemeColor;
-    }
-
-    /**
-     * Return true if the theme color preference should follow system dynamic color.
-     *
-     * @param context context to get the preference
-     * @return whether system dynamic color should be used when available
-     */
-    public static boolean isFollowSystemThemeColor(final Context context) {
-        return getThemeColorPreference(context)
-                .equals(context.getString(R.string.theme_color_follow_system_value));
-    }
-
-    /**
-     * Return whether Material You dynamic colors should be applied.
-     *
-     * @param context context to get theme and theme color preferences
-     * @return true when dynamic colors should be applied
-     */
-    public static boolean shouldApplyDynamicColors(final Context context) {
-        return context instanceof Activity
-                && isFollowSystemThemeColor(context)
-                && !isBlackThemeSelected(context);
-    }
-
-    /**
-     * Apply a static color preset overlay when the theme color preference is manual.
-     *
-     * @param context context that will receive a static color overlay
-     */
-    public static void applyThemeColorOverlay(final Context context) {
-        final int overlay = getThemeColorOverlay(context);
-        if (overlay != 0) {
-            context.getTheme().applyStyle(overlay, true);
-        }
-    }
-
-    @StyleRes
-    private static int getThemeColorOverlay(final Context context) {
-        final Resources res = context.getResources();
-        final String selectedThemeColor = getThemeColorPreference(context);
-
-        if (selectedThemeColor.equals(res.getString(R.string.theme_color_app_default_value))) {
-            return R.style.ThemeOverlay_NewPipe_ThemeColor_Default;
-        } else if (selectedThemeColor.equals(res.getString(R.string.theme_color_neutral_value))) {
-            return R.style.ThemeOverlay_NewPipe_ThemeColor_Neutral;
-        } else if (selectedThemeColor.equals(res.getString(R.string.theme_color_green_value))) {
-            return R.style.ThemeOverlay_NewPipe_ThemeColor_Green;
-        } else if (selectedThemeColor.equals(res.getString(R.string.theme_color_blue_value))) {
-            return R.style.ThemeOverlay_NewPipe_ThemeColor_Blue;
-        } else if (selectedThemeColor.equals(res.getString(R.string.theme_color_purple_value))) {
-            return R.style.ThemeOverlay_NewPipe_ThemeColor_Purple;
-        } else if (selectedThemeColor.equals(res.getString(R.string.theme_color_orange_value))) {
-            return R.style.ThemeOverlay_NewPipe_ThemeColor_Orange;
-        } else if (selectedThemeColor.equals(res.getString(R.string.theme_color_pink_value))) {
-            return R.style.ThemeOverlay_NewPipe_ThemeColor_Pink;
-        } else if (selectedThemeColor.equals(res.getString(R.string.theme_color_red_value))) {
-            return R.style.ThemeOverlay_NewPipe_ThemeColor_Red;
-        }
-
-        return 0;
     }
 
     /**
@@ -195,23 +91,6 @@ public final class ThemeHelper {
     }
 
     /**
-     * Return true if the selected theme resolves to the Black theme.
-     *
-     * @param context context to get the preference
-     * @return whether the black theme is selected or resolved from automatic device theme
-     */
-    public static boolean isBlackThemeSelected(final Context context) {
-        final String selectedThemeKey = getSelectedThemeKey(context);
-        final Resources res = context.getResources();
-        final String blackThemeKey = res.getString(R.string.black_theme_key);
-
-        return selectedThemeKey.equals(blackThemeKey)
-                || (selectedThemeKey.equals(res.getString(R.string.auto_device_theme_key))
-                && isDeviceDarkThemeEnabled(context)
-                && getSelectedNightThemeKey(context).equals(blackThemeKey));
-    }
-
-    /**
      * Return a dialog theme styled according to the (default) selected theme.
      *
      * @param context context to get the selected theme
@@ -219,7 +98,7 @@ public final class ThemeHelper {
      */
     @StyleRes
     public static int getDialogTheme(final Context context) {
-        return getDialogTheme(context, false);
+        return isLightThemeSelected(context) ? R.style.LightDialogTheme : R.style.DarkDialogTheme;
     }
 
     /**
@@ -230,83 +109,8 @@ public final class ThemeHelper {
      */
     @StyleRes
     public static int getMinWidthDialogTheme(final Context context) {
-        return getDialogTheme(context, true);
-    }
-
-    @StyleRes
-    private static int getDialogTheme(final Context context, final boolean minWidth) {
-        final boolean light = isLightThemeSelected(context);
-        final int defaultTheme = minWidth
-                ? (light ? R.style.LightDialogMinWidthTheme : R.style.DarkDialogMinWidthTheme)
-                : (light ? R.style.LightDialogTheme : R.style.DarkDialogTheme);
-        if (isFollowSystemThemeColor(context)) {
-            return defaultTheme;
-        }
-
-        final Resources res = context.getResources();
-        final String selectedColor = getThemeColorPreference(context);
-        if (selectedColor.equals(res.getString(R.string.theme_color_app_default_value))) {
-            return selectDialogTheme(light, minWidth,
-                    R.style.LightDialogTheme_ThemeColor_Default,
-                    R.style.DarkDialogTheme_ThemeColor_Default,
-                    R.style.LightDialogMinWidthTheme_ThemeColor_Default,
-                    R.style.DarkDialogMinWidthTheme_ThemeColor_Default);
-        } else if (selectedColor.equals(res.getString(R.string.theme_color_neutral_value))) {
-            return selectDialogTheme(light, minWidth,
-                    R.style.LightDialogTheme_ThemeColor_Neutral,
-                    R.style.DarkDialogTheme_ThemeColor_Neutral,
-                    R.style.LightDialogMinWidthTheme_ThemeColor_Neutral,
-                    R.style.DarkDialogMinWidthTheme_ThemeColor_Neutral);
-        } else if (selectedColor.equals(res.getString(R.string.theme_color_green_value))) {
-            return selectDialogTheme(light, minWidth,
-                    R.style.LightDialogTheme_ThemeColor_Green,
-                    R.style.DarkDialogTheme_ThemeColor_Green,
-                    R.style.LightDialogMinWidthTheme_ThemeColor_Green,
-                    R.style.DarkDialogMinWidthTheme_ThemeColor_Green);
-        } else if (selectedColor.equals(res.getString(R.string.theme_color_blue_value))) {
-            return selectDialogTheme(light, minWidth,
-                    R.style.LightDialogTheme_ThemeColor_Blue,
-                    R.style.DarkDialogTheme_ThemeColor_Blue,
-                    R.style.LightDialogMinWidthTheme_ThemeColor_Blue,
-                    R.style.DarkDialogMinWidthTheme_ThemeColor_Blue);
-        } else if (selectedColor.equals(res.getString(R.string.theme_color_purple_value))) {
-            return selectDialogTheme(light, minWidth,
-                    R.style.LightDialogTheme_ThemeColor_Purple,
-                    R.style.DarkDialogTheme_ThemeColor_Purple,
-                    R.style.LightDialogMinWidthTheme_ThemeColor_Purple,
-                    R.style.DarkDialogMinWidthTheme_ThemeColor_Purple);
-        } else if (selectedColor.equals(res.getString(R.string.theme_color_orange_value))) {
-            return selectDialogTheme(light, minWidth,
-                    R.style.LightDialogTheme_ThemeColor_Orange,
-                    R.style.DarkDialogTheme_ThemeColor_Orange,
-                    R.style.LightDialogMinWidthTheme_ThemeColor_Orange,
-                    R.style.DarkDialogMinWidthTheme_ThemeColor_Orange);
-        } else if (selectedColor.equals(res.getString(R.string.theme_color_pink_value))) {
-            return selectDialogTheme(light, minWidth,
-                    R.style.LightDialogTheme_ThemeColor_Pink,
-                    R.style.DarkDialogTheme_ThemeColor_Pink,
-                    R.style.LightDialogMinWidthTheme_ThemeColor_Pink,
-                    R.style.DarkDialogMinWidthTheme_ThemeColor_Pink);
-        } else if (selectedColor.equals(res.getString(R.string.theme_color_red_value))) {
-            return selectDialogTheme(light, minWidth,
-                    R.style.LightDialogTheme_ThemeColor_Red,
-                    R.style.DarkDialogTheme_ThemeColor_Red,
-                    R.style.LightDialogMinWidthTheme_ThemeColor_Red,
-                    R.style.DarkDialogMinWidthTheme_ThemeColor_Red);
-        }
-        return defaultTheme;
-    }
-
-    @StyleRes
-    private static int selectDialogTheme(final boolean light, final boolean minWidth,
-                                         @StyleRes final int lightTheme,
-                                         @StyleRes final int darkTheme,
-                                         @StyleRes final int lightMinWidthTheme,
-                                         @StyleRes final int darkMinWidthTheme) {
-        if (minWidth) {
-            return light ? lightMinWidthTheme : darkMinWidthTheme;
-        }
-        return light ? lightTheme : darkTheme;
+        return isLightThemeSelected(context) ? R.style.LightDialogMinWidthTheme
+                : R.style.DarkDialogMinWidthTheme;
     }
 
     /**
@@ -351,6 +155,7 @@ public final class ThemeHelper {
         if (serviceId <= -1) {
             return baseTheme;
         }
+
         final StreamingService service;
         try {
             service = NewPipe.getService(serviceId);
@@ -364,6 +169,7 @@ public final class ThemeHelper {
         } else if (baseTheme == R.style.BlackTheme) {
             themeName = "BlackTheme";
         }
+
         themeName += "." + service.getServiceInfo().getName();
         final int resourceId = getThemeOrDefault(themeName, baseTheme);
 

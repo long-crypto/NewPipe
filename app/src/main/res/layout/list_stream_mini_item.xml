@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/itemRoot"
     android:layout_width="match_parent"
@@ -10,7 +9,7 @@
     android:focusable="true"
     android:padding="@dimen/video_item_search_padding">
 
-    <com.google.android.material.imageview.ShapeableImageView
+    <ImageView
         android:id="@+id/itemThumbnailView"
         android:layout_width="98dp"
         android:layout_height="55dp"
@@ -20,7 +19,6 @@
         android:layout_marginRight="@dimen/video_item_search_image_right_margin"
         android:scaleType="fitCenter"
         android:src="@drawable/placeholder_thumbnail_video"
-        app:shapeAppearanceOverlay="@style/ShapeAppearanceOverlay.NewPipe.Md3.StreamThumbnail"
         tools:ignore="RtlHardcoded" />
 
     <org.schabi.newpipe.views.NewPipeTextView
@@ -31,14 +29,14 @@
         android:layout_alignBottom="@id/itemThumbnailView"
         android:layout_marginRight="@dimen/video_item_search_duration_margin"
         android:layout_marginBottom="@dimen/video_item_search_duration_margin"
-        android:background="@color/info_list_duration_badge_background_color"
+        android:background="@color/duration_background_color"
         android:paddingLeft="@dimen/video_item_search_duration_horizontal_padding"
         android:paddingTop="@dimen/video_item_search_duration_vertical_padding"
         android:paddingRight="@dimen/video_item_search_duration_horizontal_padding"
         android:paddingBottom="@dimen/video_item_search_duration_vertical_padding"
         android:textAllCaps="true"
         android:textAppearance="?android:attr/textAppearanceSmall"
-        android:textColor="@color/info_list_thumbnail_badge_text_color"
+        android:textColor="@color/duration_text_color"
         android:textSize="@dimen/video_item_search_duration_text_size"
         tools:ignore="RtlHardcoded"
         tools:text="1:09:10" />
@@ -54,7 +52,6 @@
         android:ellipsize="end"
         android:maxLines="2"
         android:textAppearance="?android:attr/textAppearanceLarge"
-        android:textColor="?attr/colorOnSurface"
         android:textSize="@dimen/video_item_search_title_text_size"
         tools:text="Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nunc tristique vitae sem vitae blanditLorem ipsumLorem ipsumLorem ipsumLorem ipsumLorem ipsumLorem ipsumLorem ipsum" />
 
@@ -67,7 +64,6 @@
         android:layout_toRightOf="@+id/itemThumbnailView"
         android:lines="1"
         android:textAppearance="?android:attr/textAppearanceSmall"
-        android:textColor="?attr/colorOnSurfaceVariant"
         android:textSize="@dimen/video_item_search_uploader_text_size"
         tools:text="Uploader" />
 
@@ -75,12 +71,11 @@
         android:id="@+id/itemProgressView"
         style="@style/Widget.AppCompat.ProgressBar.Horizontal"
         android:layout_width="wrap_content"
-        android:layout_height="@dimen/stream_thumbnail_progress_height"
+        android:layout_height="4dp"
+        android:layout_below="@id/itemThumbnailView"
         android:layout_alignStart="@id/itemThumbnailView"
         android:layout_alignEnd="@id/itemThumbnailView"
-        android:layout_alignBottom="@id/itemThumbnailView"
-        android:layout_marginBottom="@dimen/stream_thumbnail_progress_bottom_margin"
-        android:layout_marginHorizontal="@dimen/stream_thumbnail_progress_horizontal_inset"
-        android:progressDrawable="@drawable/progress_stream_thumbnail_material" />
+        android:layout_marginTop="-2dp"
+        android:progressDrawable="?progress_horizontal_drawable" />
 
 </RelativeLayout>

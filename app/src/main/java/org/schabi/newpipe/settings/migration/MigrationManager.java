@@ -6,7 +6,6 @@ import androidx.annotation.NonNull;
 import androidx.appcompat.app.AlertDialog;
 import androidx.core.util.Consumer;
 
-import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import org.schabi.newpipe.R;
 import org.schabi.newpipe.error.ErrorUtil;
 
@@ -91,7 +90,7 @@ public final class MigrationManager {
     static AlertDialog createMigrationInfoDialog(@NonNull final Context uiContext,
                                                  @NonNull final String title,
                                                  @NonNull final String message) {
-        return new MaterialAlertDialogBuilder(uiContext)
+        return new AlertDialog.Builder(uiContext)
                 .setTitle(title)
                 .setMessage(message)
                 .setPositiveButton(R.string.ok, null)

@@ -32,7 +32,6 @@
         android:ellipsize="end"
         android:lines="1"
         android:textAppearance="?android:attr/textAppearanceLarge"
-        android:textColor="?attr/colorOnSurface"
         android:textSize="@dimen/video_item_search_title_text_size"
         tools:ignore="RtlHardcoded"
         tools:text="Channel Title, Lorem ipsum" />
@@ -45,7 +44,6 @@
         android:layout_toRightOf="@+id/itemThumbnailView"
         android:lines="1"
         android:textAppearance="?android:attr/textAppearanceSmall"
-        android:textColor="?attr/colorOnSurfaceVariant"
         android:textSize="@dimen/video_item_search_upload_date_text_size"
         tools:ignore="RtlHardcoded"
         tools:text="10M subscribers" />

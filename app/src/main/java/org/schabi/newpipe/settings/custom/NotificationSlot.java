@@ -1,7 +1,5 @@
 package org.schabi.newpipe.settings.custom;
 
-import static com.google.android.material.R.attr.colorOnSurfaceVariant;
-
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.content.res.ColorStateList;
@@ -148,7 +146,7 @@ class NotificationSlot {
                 radioButton.setCompoundDrawablesRelativeWithIntrinsicBounds(0, 0, iconId, 0);
 
                 final var color = ColorStateList.valueOf(ThemeHelper
-                        .resolveColorFromAttr(context, colorOnSurfaceVariant));
+                        .resolveColorFromAttr(context, android.R.attr.textColorPrimary));
                 TextViewCompat.setCompoundDrawableTintList(radioButton, color);
             }
 

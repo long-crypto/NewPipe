@@ -5,17 +5,13 @@
     android:layout_height="match_parent"
     android:orientation="vertical">
 
-    <com.google.android.material.appbar.MaterialToolbar
+    <androidx.appcompat.widget.Toolbar
         android:id="@+id/toolbar"
         android:layout_width="match_parent"
         android:layout_height="?attr/actionBarSize"
-        android:background="?attr/colorSurface"
+        android:background="?attr/colorPrimary"
         android:gravity="center_vertical"
-        android:minHeight="?attr/actionBarSize"
-        android:theme="@style/ToolbarTheme"
-        app:navigationIconTint="?attr/colorOnSurface"
-        app:subtitleTextColor="?attr/colorOnSurfaceVariant"
-        app:titleTextColor="?attr/colorOnSurface" />
+        android:minHeight="?attr/actionBarSize" />
 
     <WebView
         android:id="@+id/reCaptchaWebView"

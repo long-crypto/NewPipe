@@ -1,9 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <layer-list xmlns:android="http://schemas.android.com/apk/res/android">
 
-    <item android:drawable="@color/dark_m3_secondary_container_color" />
-
     <item
-        android:drawable="@drawable/ic_md3_splash"
-        android:gravity="center" />
+        android:drawable="@color/dark_youtube_primary_color"/>
+
+    <item>
+        <bitmap
+            android:src="@drawable/ic_newpipe_triangle_white"
+            android:gravity="center_vertical|center_horizontal" />
+    </item>
 </layer-list>

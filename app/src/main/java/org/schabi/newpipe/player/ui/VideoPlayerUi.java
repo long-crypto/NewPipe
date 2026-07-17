@@ -17,7 +17,6 @@ import static org.schabi.newpipe.player.helper.PlayerHelper.nextResizeModeAndSav
 import static org.schabi.newpipe.player.helper.PlayerHelper.retrieveSeekDurationFromPreferences;
 
 import android.content.Intent;
-import android.content.res.ColorStateList;
 import android.content.res.Resources;
 import android.graphics.Bitmap;
 import android.graphics.Color;
@@ -83,7 +82,6 @@ import org.schabi.newpipe.player.seekbarpreview.SeekbarPreviewThumbnailHolder;
 import org.schabi.newpipe.util.DeviceUtils;
 import org.schabi.newpipe.util.Localization;
 import org.schabi.newpipe.util.NavigationHelper;
-import org.schabi.newpipe.util.ThemeHelper;
 import org.schabi.newpipe.util.external_communication.KoreUtils;
 import org.schabi.newpipe.util.external_communication.ShareUtils;
 import org.schabi.newpipe.views.player.PlayerFastSeekOverlay;
@@ -179,10 +177,13 @@ public abstract class VideoPlayerUi extends PlayerUi implements SeekBar.OnSeekBa
         binding.resizeTextView
                 .setText(PlayerHelper.resizeTypeOf(context, binding.surfaceView.getResizeMode()));
 
-        applyPlayerSeekBarColor();
+        binding.playbackSeekBar.getThumb()
+                .setColorFilter(new PorterDuffColorFilter(Color.RED, PorterDuff.Mode.SRC_IN));
+        binding.playbackSeekBar.getProgressDrawable()
+                .setColorFilter(new PorterDuffColorFilter(Color.RED, PorterDuff.Mode.MULTIPLY));
 
         final ContextThemeWrapper themeWrapper = new ContextThemeWrapper(context,
-                R.style.PlayerOverlayPopupMenu);
+                R.style.DarkPopupMenu);
 
         qualityPopupMenu = new PopupMenu(themeWrapper, binding.qualityTextView);
         audioTrackPopupMenu = new PopupMenu(themeWrapper, binding.audioTrackTextView);
@@ -197,18 +198,6 @@ public abstract class VideoPlayerUi extends PlayerUi implements SeekBar.OnSeekBa
 
         // Prevent hiding of bottom sheet via swipe inside queue
         binding.itemsList.setNestedScrollingEnabled(false);
-    }
-
-    private void applyPlayerSeekBarColor() {
-        final int playerSeekBarColor = ThemeHelper.resolveColorFromAttr(
-                context, R.attr.colorPrimaryFixedDim);
-        final ColorStateList playerSeekBarColorStateList =
-                ColorStateList.valueOf(playerSeekBarColor);
-
-        binding.playbackSeekBar.setProgressTintList(playerSeekBarColorStateList);
-        binding.playbackSeekBar.setProgressTintMode(PorterDuff.Mode.SRC_IN);
-        binding.playbackSeekBar.setThumbTintList(playerSeekBarColorStateList);
-        binding.playbackSeekBar.setThumbTintMode(PorterDuff.Mode.SRC_IN);
     }
 
     abstract BasePlayerGestureListener buildGestureListener();
@@ -828,7 +817,8 @@ public abstract class VideoPlayerUi extends PlayerUi implements SeekBar.OnSeekBa
         hideControls(DEFAULT_CONTROLS_DURATION, 0);
 
         binding.playbackSeekBar.setEnabled(false);
-        applyPlayerSeekBarColor();
+        binding.playbackSeekBar.getThumb()
+                .setColorFilter(new PorterDuffColorFilter(Color.RED, PorterDuff.Mode.SRC_IN));
 
         binding.loadingPanel.setBackgroundColor(Color.BLACK);
         animate(binding.loadingPanel, true, 0);
@@ -847,7 +837,8 @@ public abstract class VideoPlayerUi extends PlayerUi implements SeekBar.OnSeekBa
         updateStreamRelatedViews();
 
         binding.playbackSeekBar.setEnabled(true);
-        applyPlayerSeekBarColor();
+        binding.playbackSeekBar.getThumb()
+                .setColorFilter(new PorterDuffColorFilter(Color.RED, PorterDuff.Mode.SRC_IN));
 
         binding.loadingPanel.setVisibility(View.GONE);
 

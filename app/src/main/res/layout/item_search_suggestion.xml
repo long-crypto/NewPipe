@@ -3,9 +3,8 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:background="?attr/colorSurface"
     android:orientation="horizontal"
-    android:theme="@style/SearchSuggestionTheme">
+    android:theme="@style/ContrastTintTheme">
 
     <LinearLayout
         android:id="@+id/suggestion_search"
@@ -29,7 +28,6 @@
             android:layout_gravity="center_vertical"
             android:layout_marginLeft="16dp"
             android:layout_marginRight="16dp"
-            android:tint="?attr/colorOnSurfaceVariant"
             tools:ignore="ContentDescription,RtlHardcoded"
             tools:src="@drawable/ic_history" />
 
@@ -41,7 +39,6 @@
             android:ellipsize="end"
             android:maxLines="2"
             android:textAppearance="@style/TextAppearance.AppCompat.Body1"
-            android:textColor="?attr/colorOnSurface"
             android:textSize="14sp"
             tools:ignore="RtlHardcoded"
             tools:text="Search query" />
@@ -67,7 +64,6 @@
             android:layout_height="20dp"
             android:layout_gravity="center"
             android:src="@drawable/ic_search_add"
-            android:tint="?attr/colorOnSurfaceVariant"
             tools:ignore="ContentDescription,RtlHardcoded" />
     </LinearLayout>
 
