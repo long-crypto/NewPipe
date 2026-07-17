@@ -2,6 +2,7 @@ package org.schabi.newpipe.local.feed.service
 
 import android.content.Context
 import android.content.SharedPreferences
+import android.os.SystemClock
 import androidx.preference.PreferenceManager
 import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers
 import io.reactivex.rxjava3.core.Completable
@@ -13,6 +14,8 @@ import io.reactivex.rxjava3.processors.PublishProcessor
 import io.reactivex.rxjava3.schedulers.Schedulers
 import java.time.OffsetDateTime
 import java.time.ZoneOffset
+import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicInteger
 import org.schabi.newpipe.R
@@ -38,6 +41,7 @@ class FeedLoadManager(private val context: Context) {
     private val feedDatabaseManager = FeedDatabaseManager(context)
 
     private val notificationUpdater = PublishProcessor.create<String>()
+    private val cancellationSignal = PublishProcessor.create<Unit>()
     private val currentProgress = AtomicInteger(-1)
     private val maxProgress = AtomicInteger(-1)
     private val cancelSignal = AtomicBoolean()
@@ -123,6 +127,11 @@ class FeedLoadManager(private val context: Context) {
                     }
                 }
             }
+            .flatMapSingle { subscriptionEntity ->
+                serviceRequestDelay(subscriptionEntity.serviceId)
+                    .toSingleDefault(subscriptionEntity)
+            }
+            .takeWhile { !cancelSignal.get() }
             .parallel(PARALLEL_EXTRACTIONS, PARALLEL_EXTRACTIONS * 2)
             .runOn(Schedulers.io(), PARALLEL_EXTRACTIONS * 2)
             .filter { !cancelSignal.get() }
@@ -141,7 +150,9 @@ class FeedLoadManager(private val context: Context) {
     }
 
     fun cancel() {
-        cancelSignal.set(true)
+        if (cancelSignal.compareAndSet(false, true)) {
+            cancellationSignal.onNext(Unit)
+        }
     }
 
     private fun broadcastProgress() {
@@ -151,6 +162,28 @@ class FeedLoadManager(private val context: Context) {
                 maxProgress.get()
             )
         )
+    }
+
+    private fun serviceRequestDelay(serviceId: Int): Completable {
+        if (cancelSignal.get()) {
+            return Completable.complete()
+        }
+        val minimumIntervalMillis = serviceFeedFetchIntervals.computeIfAbsent(serviceId) {
+            runCatching { NewPipe.getService(serviceId).feedFetchInterval }.getOrDefault(0L)
+        }
+        if (minimumIntervalMillis <= 0L) {
+            return Completable.complete()
+        }
+
+        val serviceLock = serviceRequestLocks.computeIfAbsent(serviceId) { Any() }
+        val delayMillis = synchronized(serviceLock) {
+            val now = SystemClock.elapsedRealtime()
+            val requestStart = maxOf(now, nextAllowedRequestStart[serviceId] ?: 0L)
+            nextAllowedRequestStart[serviceId] = requestStart + minimumIntervalMillis
+            requestStart - now
+        }
+        return Completable.timer(delayMillis, TimeUnit.MILLISECONDS)
+            .takeUntil(cancellationSignal.ignoreElements())
     }
 
     private fun loadStreams(
@@ -362,6 +395,11 @@ class FeedLoadManager(private val context: Context) {
          * being rate limited
          */
         private val DELAY_BETWEEN_BATCHES_MILLIS = (6000L..12000L)
+
+        /** Process-wide service pacing shared by manual and background feed refreshes. */
+        private val serviceFeedFetchIntervals = ConcurrentHashMap<Int, Long>()
+        private val serviceRequestLocks = ConcurrentHashMap<Int, Any>()
+        private val nextAllowedRequestStart = ConcurrentHashMap<Int, Long>()
 
         /**
          * Number of items to buffer to mass-insert in the database.

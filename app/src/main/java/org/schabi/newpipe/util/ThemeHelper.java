@@ -21,6 +21,7 @@ package org.schabi.newpipe.util;
 
 import android.app.Activity;
 import android.content.Context;
+import android.content.SharedPreferences;
 import android.content.res.Configuration;
 import android.content.res.Resources;
 import android.graphics.drawable.Drawable;
@@ -46,6 +47,8 @@ import org.schabi.newpipe.extractor.exceptions.ExtractionException;
 import org.schabi.newpipe.info_list.ItemViewMode;
 
 public final class ThemeHelper {
+    private static final String LEGACY_THEME_COLOR_APP_DEFAULT = "newpipe_material";
+
     private ThemeHelper() {
     }
 
@@ -102,9 +105,17 @@ public final class ThemeHelper {
      * @return selected theme color preference value
      */
     public static String getThemeColorPreference(final Context context) {
-        return PreferenceManager.getDefaultSharedPreferences(context).getString(
-                context.getString(R.string.theme_color_key),
-                context.getString(R.string.default_theme_color_value));
+        final SharedPreferences preferences =
+                PreferenceManager.getDefaultSharedPreferences(context);
+        final String key = context.getString(R.string.theme_color_key);
+        final String selectedThemeColor = preferences.getString(
+                key, context.getString(R.string.default_theme_color_value));
+        if (LEGACY_THEME_COLOR_APP_DEFAULT.equals(selectedThemeColor)) {
+            final String appDefault = context.getString(R.string.theme_color_app_default_value);
+            preferences.edit().putString(key, appDefault).apply();
+            return appDefault;
+        }
+        return selectedThemeColor;
     }
 
     /**

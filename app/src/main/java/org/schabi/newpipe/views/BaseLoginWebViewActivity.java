@@ -9,6 +9,7 @@ import android.webkit.WebViewClient;
 import androidx.appcompat.app.AppCompatActivity;
 
 import org.schabi.newpipe.R;
+import org.schabi.newpipe.util.ThemeHelper;
 
 public abstract class BaseLoginWebViewActivity extends AppCompatActivity {
 
@@ -17,6 +18,7 @@ public abstract class BaseLoginWebViewActivity extends AppCompatActivity {
 
     @Override
     protected void onCreate(final Bundle savedInstanceState) {
+        ThemeHelper.setTheme(this);
         super.onCreate(savedInstanceState);
         setContentView(R.layout.login_webview);
 
