@@ -2373,6 +2373,14 @@ public final class Player implements PlaybackListener, Listener {
         reloadPlayQueueManager();
     }
 
+    public void setAudioStream(@NonNull final AudioStream audioStream) {
+        saveStreamProgressState();
+        setRecovery();
+        videoResolver.setAudioStream(audioStream);
+        audioResolver.setAudioStream(audioStream);
+        reloadPlayQueueManager();
+    }
+
 
     @NonNull
     public Context getContext() {

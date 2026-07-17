@@ -25,6 +25,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.MissingResourceException;
@@ -140,15 +141,33 @@ public final class ListHelper {
                                           final List<AudioStream> audioStreams,
                                           @Nullable final String trackId) {
         if (trackId != null) {
-            for (int i = 0; i < audioStreams.size(); i++) {
-                final AudioStream s = audioStreams.get(i);
-                if (s.getAudioTrackId() != null
-                        && s.getAudioTrackId().equals(trackId)) {
-                    return i;
-                }
-            }
+            final List<AudioStream> matchingStreams = audioStreams.stream()
+                    .filter(stream -> Objects.equals(stream.getAudioTrackId(), trackId))
+                    .collect(Collectors.toList());
+            final int matchingIndex = getAudioIndexByHighestRank(matchingStreams,
+                    getAudioFormatComparator(context));
+            return matchingIndex < 0 ? getDefaultAudioFormat(context, audioStreams)
+                    : audioStreams.indexOf(matchingStreams.get(matchingIndex));
         }
         return getDefaultAudioFormat(context, audioStreams);
+    }
+
+    public static int getAudioFormatIndex(final Context context,
+                                          final List<AudioStream> audioStreams,
+                                          @Nullable final String trackId,
+                                          final int formatId,
+                                          final int averageBitrate,
+                                          @Nullable final String quality) {
+        for (int i = 0; i < audioStreams.size(); i++) {
+            final AudioStream stream = audioStreams.get(i);
+            if (Objects.equals(stream.getAudioTrackId(), trackId)
+                    && stream.getFormatId() == formatId
+                    && stream.getAverageBitrate() == averageBitrate
+                    && Objects.equals(stream.getQuality(), quality)) {
+                return i;
+            }
+        }
+        return getAudioFormatIndex(context, audioStreams, trackId);
     }
 
     /**
@@ -207,6 +226,21 @@ public final class ListHelper {
                         && (serviceId != youtubeServiceId
                         || stream.getItagItem() == null
                         || SUPPORTED_ITAG_IDS.contains(stream.getItagItem().id)));
+    }
+
+    @NonNull
+    public static List<AudioStream> getAudioStreamsForPlayback(
+            @Nullable final List<AudioStream> audioStreams, final int serviceId) {
+        final LinkedHashMap<String, AudioStream> uniqueStreams = new LinkedHashMap<>();
+        for (final AudioStream stream : getPlayableStreams(audioStreams, serviceId)) {
+            final String key = Objects.toString(stream.getAudioTrackId(), "") + '\u0000'
+                    + stream.getFormatId() + '\u0000'
+                    + stream.getAverageBitrate() + '\u0000'
+                    + Objects.toString(stream.getQuality(), "") + '\u0000'
+                    + Objects.toString(stream.getCodec(), "");
+            uniqueStreams.putIfAbsent(key, stream);
+        }
+        return new ArrayList<>(uniqueStreams.values());
     }
 
     /**

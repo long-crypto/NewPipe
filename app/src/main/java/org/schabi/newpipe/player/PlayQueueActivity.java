@@ -638,11 +638,11 @@ public final class PlayQueueActivity extends AppCompatActivity
             for (int i = 0; i < availableStreams.size(); i++) {
                 final AudioStream audioStream = availableStreams.get(i);
                 audioTrackMenu.add(MENU_ID_AUDIO_TRACK, i, Menu.NONE,
-                        Localization.audioTrackName(this, audioStream));
+                        Localization.audioStreamName(this, audioStream));
             }
 
             final AudioStream s = selectedAudioStream.get();
-            final String trackName = Localization.audioTrackName(this, s);
+            final String trackName = Localization.audioStreamName(this, s);
             audioTrackSelector.setTitle(
                     getString(R.string.play_queue_audio_track, trackName));
 
@@ -670,8 +670,7 @@ public final class PlayQueueActivity extends AppCompatActivity
                 return;
             }
 
-            final String newAudioTrack = availableStreams.get(itemId).getAudioTrackId();
-            player.setAudioTrack(newAudioTrack);
+            player.setAudioStream(availableStreams.get(itemId));
         });
     }
 }

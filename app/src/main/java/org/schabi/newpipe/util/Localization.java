@@ -26,6 +26,7 @@ import org.ocpsoft.prettytime.PrettyTime;
 import org.ocpsoft.prettytime.units.Decade;
 import org.schabi.newpipe.R;
 import org.schabi.newpipe.extractor.ListExtractor;
+import org.schabi.newpipe.extractor.MediaFormat;
 import org.schabi.newpipe.extractor.localization.ContentCountry;
 import org.schabi.newpipe.extractor.localization.DateWrapper;
 import org.schabi.newpipe.extractor.stream.AudioStream;
@@ -345,6 +346,24 @@ public final class Localization {
         } else {
             return context.getString(R.string.unknown_audio_track);
         }
+    }
+
+    public static String audioStreamName(@NonNull final Context context,
+                                         @NonNull final AudioStream stream) {
+        final StringBuilder name = new StringBuilder(audioTrackName(context, stream));
+        final String formatName = MediaFormat.getNameById(stream.getFormatId());
+        if (formatName != null && !formatName.isEmpty()) {
+            name.append(" · ").append(formatName);
+        }
+        if (stream.getQuality() != null && !stream.getQuality().isBlank()) {
+            name.append(' ').append(stream.getQuality());
+        } else if (stream.getAverageBitrate() > 0) {
+            final int displayBitrate = stream.getAverageBitrate() > 1000
+                    ? Math.round(stream.getAverageBitrate() / 1000f)
+                    : stream.getAverageBitrate();
+            name.append(' ').append(displayBitrate).append(" kbps");
+        }
+        return name.toString();
     }
 
     @NonNull

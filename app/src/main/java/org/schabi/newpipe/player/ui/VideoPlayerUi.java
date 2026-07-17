@@ -1073,6 +1073,7 @@ public abstract class VideoPlayerUi extends PlayerUi implements SeekBar.OnSeekBa
             switch (info.getStreamType()) {
                 case AUDIO_STREAM:
                 case POST_LIVE_AUDIO_STREAM:
+                    buildAudioTrackMenu();
                     binding.surfaceView.setVisibility(View.GONE);
                     binding.endScreen.setVisibility(View.VISIBLE);
                     binding.playbackEndTime.setVisibility(View.VISIBLE);
@@ -1166,12 +1167,12 @@ public abstract class VideoPlayerUi extends PlayerUi implements SeekBar.OnSeekBa
         for (int i = 0; i < availableStreams.size(); i++) {
             final AudioStream audioStream = availableStreams.get(i);
             audioTrackPopupMenu.getMenu().add(POPUP_MENU_ID_AUDIO_TRACK, i, Menu.NONE,
-                    Localization.audioTrackName(context, audioStream));
+                    Localization.audioStreamName(context, audioStream));
         }
 
         player.getSelectedAudioStream()
                 .ifPresent(s -> binding.audioTrackTextView.setText(
-                        Localization.audioTrackName(context, s)));
+                        Localization.audioStreamName(context, s)));
         binding.audioTrackTextView.setVisibility(View.VISIBLE);
         audioTrackPopupMenu.setOnMenuItemClickListener(this);
         audioTrackPopupMenu.setOnDismissListener(this);
@@ -1353,8 +1354,7 @@ public abstract class VideoPlayerUi extends PlayerUi implements SeekBar.OnSeekBa
             return;
         }
 
-        final String newAudioTrack = availableStreams.get(menuItemIndex).getAudioTrackId();
-        player.setAudioTrack(newAudioTrack);
+        player.setAudioStream(availableStreams.get(menuItemIndex));
 
         binding.audioTrackTextView.setText(menuItem.getTitle());
     }

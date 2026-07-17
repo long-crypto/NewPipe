@@ -1,7 +1,7 @@
 package org.schabi.newpipe.player.resolver;
 
-import static org.schabi.newpipe.util.ListHelper.getFilteredAudioStreams;
 import static org.schabi.newpipe.util.ListHelper.getPlayableStreams;
+import static org.schabi.newpipe.util.ListHelper.getAudioStreamsForPlayback;
 
 import android.content.Context;
 import android.util.Log;
@@ -31,6 +31,11 @@ public class AudioPlaybackResolver implements PlaybackResolver {
     private final PlayerDataSource dataSource;
     @Nullable
     private String audioTrack;
+    private int audioFormatId = -1;
+    private int audioBitrate = -1;
+    @Nullable
+    private String audioQuality;
+    private boolean audioStreamOverride;
 
     public AudioPlaybackResolver(@NonNull final Context context,
                                  @NonNull final PlayerDataSource dataSource) {
@@ -54,13 +59,15 @@ public class AudioPlaybackResolver implements PlaybackResolver {
         }
 
         final List<AudioStream> audioStreams =
-                getFilteredAudioStreams(context, info.getAudioStreams());
+                getAudioStreamsForPlayback(info.getAudioStreams(), info.getServiceId());
         final Stream stream;
         final MediaItemTag tag;
 
         if (!audioStreams.isEmpty()) {
-            final int audioIndex =
-                    ListHelper.getAudioFormatIndex(context, audioStreams, audioTrack);
+            final int audioIndex = audioStreamOverride
+                    ? ListHelper.getAudioFormatIndex(context, audioStreams, audioTrack,
+                            audioFormatId, audioBitrate, audioQuality)
+                    : ListHelper.getAudioFormatIndex(context, audioStreams, audioTrack);
             stream = getStreamForIndex(audioIndex, audioStreams);
             tag = StreamInfoTag.of(info, audioStreams, audioIndex);
         } else {
@@ -99,5 +106,17 @@ public class AudioPlaybackResolver implements PlaybackResolver {
 
     public void setAudioTrack(@Nullable final String audioLanguage) {
         this.audioTrack = audioLanguage;
+        audioFormatId = -1;
+        audioBitrate = -1;
+        audioQuality = null;
+        audioStreamOverride = false;
+    }
+
+    public void setAudioStream(@NonNull final AudioStream audioStream) {
+        audioTrack = audioStream.getAudioTrackId();
+        audioFormatId = audioStream.getFormatId();
+        audioBitrate = audioStream.getAverageBitrate();
+        audioQuality = audioStream.getQuality();
+        audioStreamOverride = true;
     }
 }
